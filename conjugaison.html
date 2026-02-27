@@ -453,7 +453,7 @@ function importData() {
     } else gameData = imported.data;
     saveGame(SUBJECT, gameData); updateHomeUI();
     msg.textContent = '✅ Importé !'; msg.style.color = '#27ae60';
-  } catch { msg.textContent = '❌ Code invalide.'; msg.style.color = '#e74c3c'; }
+  } catch(e) { msg.textContent = '❌ Code invalide.'; msg.style.color = '#e74c3c'; }
 }
 </script>
 </body>

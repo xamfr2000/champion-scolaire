@@ -52,7 +52,7 @@ function loadSave(subject) {
     if (!raw) return newSave();
     if (!raw.stats) raw.stats = {};
     return raw;
-  } catch { return newSave(); }
+  } catch(e) { return newSave(); }
 }
 
 function newSave() {

@@ -100,7 +100,7 @@
     // Charger le XP de conjugaison pour afficher le niveau
     const tmpKey = `champion_${p.id}_conjugaison`;
     let xp = 0;
-    try { xp = JSON.parse(localStorage.getItem(tmpKey))?.xp || 0; } catch {}
+    try { var d = JSON.parse(localStorage.getItem(tmpKey)); xp = (d && d.xp) || 0; } catch(e) {}
     const level = getLevel(xp);
 
     const card = document.createElement('div');
