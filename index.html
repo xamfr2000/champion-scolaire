@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Champion Scolaire !</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Champion">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+</head>
+<body>
+
+<div class="screen active" style="width:100%;max-width:640px">
+  <div class="card">
+    <h1>🎯 Champion<br>Scolaire !</h1>
+    <p class="subtitle">Choisis ton profil pour commencer</p>
+
+    <div class="profile-grid" id="profile-grid"></div>
+  </div>
+
+  <div class="card" id="subject-card" style="display:none">
+    <h2 id="welcome-msg">Salut !</h2>
+    <p class="subtitle">Choisis ta matière</p>
+
+    <div class="subject-grid">
+      <a href="conjugaison.html" class="subject-card">
+        <div class="subject-icon">📝</div>
+        <div class="subject-name">Conjugaison</div>
+        <div class="subject-desc">Verbes et temps</div>
+      </a>
+      <div class="subject-card disabled">
+        <div class="subject-icon">🔢</div>
+        <div class="subject-name">Calcul</div>
+        <div class="subject-desc">Bientôt disponible</div>
+      </div>
+      <div class="subject-card disabled">
+        <div class="subject-icon">📖</div>
+        <div class="subject-name">Grammaire</div>
+        <div class="subject-desc">Bientôt disponible</div>
+      </div>
+      <div class="subject-card disabled">
+        <div class="subject-icon">🌍</div>
+        <div class="subject-name">Géographie</div>
+        <div class="subject-desc">Bientôt disponible</div>
+      </div>
+    </div>
+
+    <hr class="sep">
+    <button class="btn btn-secondary" onclick="switchProfile()">🔄 Changer de profil</button>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script>
+  const grid = document.getElementById('profile-grid');
+
+  PROFILES.forEach(p => {
+    // Charger le XP de conjugaison pour afficher le niveau
+    const tmpKey = `champion_${p.id}_conjugaison`;
+    let xp = 0;
+    try { xp = JSON.parse(localStorage.getItem(tmpKey))?.xp || 0; } catch {}
+    const level = getLevel(xp);
+
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.innerHTML = `
+      <div class="profile-avatar">${p.avatar}</div>
+      <div class="profile-name">${p.name}</div>
+      <div class="profile-level">${level.icon} ${level.name}</div>
+    `;
+    card.onclick = () => selectProfile(p.id);
+    grid.appendChild(card);
+  });
+
+  // Auto-select last used profile
+  const last = getLastProfile();
+  if (last && PROFILES.find(p => p.id === last)) {
+    selectProfile(last);
+  }
+
+  function selectProfile(id) {
+    setProfile(id);
+    document.getElementById('welcome-msg').textContent =
+      `Salut ${currentProfile.name} ${currentProfile.avatar} !`;
+    document.getElementById('subject-card').style.display = '';
+    document.getElementById('profile-grid').parentElement.querySelectorAll('.profile-card').forEach(c => {
+      c.style.borderColor = '#e8eaff';
+    });
+    // Highlight selected
+    const idx = PROFILES.findIndex(p => p.id === id);
+    grid.children[idx].style.borderColor = '#6C63FF';
+  }
+
+  function switchProfile() {
+    document.getElementById('subject-card').style.display = 'none';
+    document.querySelectorAll('.profile-card').forEach(c => c.style.borderColor = '#e8eaff');
+  }
+</script>
+</body>
+</html>

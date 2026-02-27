@@ -1,0 +1,203 @@
+/* ================================================================
+   Champion Scolaire — Styles partagés
+   ================================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: linear-gradient(135deg, #6C63FF 0%, #3F3D56 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+}
+
+.screen { display: none; width: 100%; max-width: 640px; }
+.screen.active { display: block; }
+
+.card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 26px 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  margin-top: 10px;
+}
+
+h1 {
+  font-size: 2em;
+  text-align: center;
+  background: linear-gradient(135deg, #6C63FF, #FF6B9D);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+h2 { font-size: 1.35em; color: #3F3D56; margin-bottom: 14px; }
+h3 { font-size: 1.05em; color: #555; margin: 16px 0 8px; }
+
+.subtitle { text-align: center; color: #888; margin-bottom: 18px; font-size: 0.93em; }
+
+/* Level badge */
+.level-badge {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #6C63FF18, #FF6B9D18);
+  border-radius: 18px; padding: 13px 17px; margin: 14px 0;
+  border: 2px solid #6C63FF30;
+}
+.level-icon { font-size: 2.3em; }
+.level-info { flex: 1; }
+.level-name { font-weight: bold; color: #3F3D56; font-size: 1.05em; }
+.level-xp { font-size: 0.82em; color: #888; margin-top: 2px; }
+.xp-bar { height: 8px; background: #e8eaff; border-radius: 4px; margin-top: 7px; overflow: hidden; }
+.xp-fill { height: 100%; background: linear-gradient(90deg, #6C63FF, #FF6B9D); border-radius: 4px; transition: width 0.6s ease; }
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.stat-card { background: #f8f9ff; border-radius: 14px; padding: 13px; text-align: center; border: 2px solid #e8eaff; }
+.stat-card .value { font-size: 1.8em; font-weight: bold; color: #6C63FF; }
+.stat-card .label { font-size: 0.8em; color: #888; margin-top: 3px; }
+
+/* Buttons */
+.btn {
+  display: block; width: 100%; padding: 14px;
+  border: none; border-radius: 14px;
+  font-size: 1em; font-weight: 600; cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+  margin-top: 10px; font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, #6C63FF, #9B59B6); color: white; box-shadow: 0 5px 18px rgba(108,99,255,0.35); }
+.btn-primary:hover { box-shadow: 0 7px 24px rgba(108,99,255,0.5); }
+.btn-revision { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; box-shadow: 0 5px 18px rgba(255,152,0,0.35); }
+.btn-eval { background: linear-gradient(135deg, #27ae60, #1e8449); color: white; box-shadow: 0 5px 18px rgba(39,174,96,0.35); }
+.btn-secondary { background: #f0f1ff; color: #6C63FF; }
+.btn-danger { background: #fff0f0; color: #e74c3c; }
+
+/* Session header */
+.session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.mode-label { font-size: 0.85em; font-weight: bold; padding: 4px 10px; border-radius: 20px; }
+.mode-normal   { background: #ede9ff; color: #6C63FF; }
+.mode-revision { background: #fff3e0; color: #F57C00; }
+.mode-eval     { background: #e8f8ef; color: #27ae60; }
+.score-display { display: flex; gap: 14px; font-size: 0.92em; color: #666; }
+.score-display span { font-weight: bold; color: #6C63FF; }
+#timer-text { font-weight: bold; color: #6C63FF; font-size: 1.1em; }
+
+.timer-bar-container { width: 100%; height: 9px; background: #e8eaff; border-radius: 5px; margin-bottom: 14px; overflow: hidden; }
+#timerBar { height: 100%; background: linear-gradient(90deg, #6C63FF, #FF6B9D); border-radius: 5px; width: 100%; transition: width 1s linear, background 0.5s; }
+
+.streak { text-align: center; font-size: 1.25em; min-height: 30px; color: #FF6B9D; font-weight: bold; margin-bottom: 4px; }
+
+/* Question card */
+.question-card {
+  background: linear-gradient(135deg, #6C63FF12, #FF6B9D12);
+  border-radius: 18px; padding: 20px 18px; margin: 12px 0;
+  border: 2px solid #6C63FF22; text-align: center;
+}
+.question-verb { font-size: 1.9em; font-weight: bold; color: #6C63FF; margin-bottom: 5px; }
+.question-tense { font-size: 1.05em; color: #555; margin-bottom: 5px; }
+.pronoun-label { font-size: 0.82em; color: #aaa; margin-bottom: 3px; }
+.question-pronoun { font-size: 1.5em; font-weight: bold; color: #FF6B9D; }
+.eval-progress { font-size: 0.85em; color: #888; margin-top: 6px; }
+
+/* Answer */
+.answer-input {
+  width: 100%; padding: 14px; border: 3px solid #e8eaff;
+  border-radius: 14px; font-size: 1.15em; text-align: center;
+  outline: none; transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 9px; font-family: inherit;
+}
+.answer-input:focus { border-color: #6C63FF; }
+.answer-input.correct { border-color: #27ae60; background: #f0fff6; }
+.answer-input.incorrect { border-color: #e74c3c; background: #fff5f5; }
+
+/* Feedback */
+.feedback { display: none; border-radius: 14px; padding: 13px 16px; margin: 10px 0 5px; text-align: center; }
+.feedback.correct { background: #f0fff6; border: 2px solid #27ae60; color: #27ae60; }
+.feedback.incorrect { background: #fff5f5; border: 2px solid #e74c3c; color: #c0392b; }
+.feedback-title { font-size: 1.25em; font-weight: bold; margin-bottom: 4px; }
+.feedback-answer { font-size: 0.97em; }
+
+/* Conjugation table */
+.conj-table { display: none; width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; border-radius: 12px; overflow: hidden; }
+.conj-table td { padding: 7px 13px; border-bottom: 1px solid #f0f0f0; }
+.conj-table .conj-header td { font-weight: bold; background: #f4f5ff; color: #6C63FF; }
+.conj-table td:first-child { color: #999; width: 42%; }
+.conj-table td:last-child { font-weight: 600; color: #3F3D56; }
+.conj-table .highlight-row td { background: #fff8e1; }
+.conj-table .highlight-row td:last-child { color: #e67e22; font-size: 1.03em; }
+
+/* Results */
+.result-score { font-size: 3.5em; text-align: center; font-weight: bold; color: #6C63FF; margin: 14px 0 8px; }
+.result-eval-pass { font-size: 2em; text-align: center; font-weight: bold; color: #27ae60; margin: 14px 0 8px; background: #e8f8ef; border-radius: 14px; padding: 16px; }
+.result-eval-fail { font-size: 2em; text-align: center; font-weight: bold; color: #e67e22; margin: 14px 0 8px; background: #fff8f0; border-radius: 14px; padding: 16px; }
+.result-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin: 14px 0; }
+.result-stat { text-align: center; background: #f8f9ff; border-radius: 12px; padding: 11px 5px; }
+.result-stat .val { font-size: 1.8em; font-weight: bold; color: #6C63FF; }
+.result-stat .lbl { font-size: 0.76em; color: #888; margin-top: 2px; }
+.xp-gain { text-align: center; font-size: 1.2em; color: #FF6B9D; font-weight: bold; margin: 12px 0; background: #fff0f8; border-radius: 12px; padding: 11px; }
+.errors-section h3 { color: #e74c3c; margin-bottom: 8px; font-size: 0.93em; }
+.error-item { background: #fff5f5; border-radius: 10px; padding: 9px 13px; margin: 5px 0; font-size: 0.86em; border-left: 3px solid #e74c3c; }
+.error-item strong { color: #6C63FF; }
+.wrong-ans { color: #e74c3c; text-decoration: line-through; margin: 0 4px; }
+.right-ans { color: #27ae60; font-weight: bold; }
+
+/* Stats / History */
+.weak-combo {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff5f5; border-radius: 10px; padding: 10px 14px; margin: 5px 0;
+  border-left: 4px solid #e74c3c; font-size: 0.88em;
+}
+.weak-combo .combo-name { font-weight: bold; color: #3F3D56; }
+.weak-combo .combo-tense { color: #888; font-size: 0.9em; }
+.weak-combo .combo-rate { font-weight: bold; color: #e74c3c; }
+.good-combo { border-left-color: #27ae60; background: #f0fff6; }
+.good-combo .combo-rate { color: #27ae60; }
+.empty-msg { text-align: center; color: #aaa; padding: 20px; font-style: italic; font-size: 0.93em; }
+
+/* Verb list */
+.verb-grid { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+.verb-chip { background: #f0f1ff; color: #6C63FF; padding: 4px 11px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+.verb-chip.priority { background: #fff0f8; color: #FF6B9D; border: 1px solid #FF6B9D50; }
+
+/* Separator */
+.sep { border: none; border-top: 1px solid #f0f0f0; margin: 14px 0; }
+
+/* Profile selection (index.html) */
+.profile-grid { display: flex; gap: 16px; margin: 24px 0; justify-content: center; flex-wrap: wrap; }
+.profile-card {
+  background: #f8f9ff; border: 3px solid #e8eaff;
+  border-radius: 20px; padding: 24px 20px; text-align: center;
+  cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  min-width: 140px; flex: 1; max-width: 200px;
+}
+.profile-card:hover { border-color: #6C63FF; transform: scale(1.04); box-shadow: 0 8px 24px rgba(108,99,255,0.2); }
+.profile-avatar { font-size: 3em; margin-bottom: 8px; }
+.profile-name { font-size: 1.2em; font-weight: bold; color: #3F3D56; }
+.profile-level { font-size: 0.85em; color: #888; margin-top: 4px; }
+
+/* Subject grid (after profile choice) */
+.subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+.subject-card {
+  background: #f8f9ff; border: 2px solid #e8eaff;
+  border-radius: 16px; padding: 20px 14px; text-align: center;
+  cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+.subject-card:hover { border-color: #6C63FF; transform: scale(1.03); }
+.subject-card.disabled { opacity: 0.4; pointer-events: none; }
+.subject-icon { font-size: 2.2em; margin-bottom: 6px; }
+.subject-name { font-size: 1em; font-weight: bold; color: #3F3D56; }
+.subject-desc { font-size: 0.78em; color: #888; margin-top: 3px; }
+
+/* Sync */
+.sync-textarea {
+  width: 100%; font-family: monospace; font-size: 0.82em;
+  padding: 10px; border: 2px solid #e8eaff; border-radius: 10px; resize: none;
+}
+
+/* Animations */
+@keyframes popIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pop { animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1); }
