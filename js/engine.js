@@ -290,20 +290,20 @@ async function syncToGitHub() {
 
   try {
     let sha = null;
-    const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'If-None-Match': '' } });
+    const getRes = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } });
     if (getRes.ok) {
       sha = (await getRes.json()).sha;
     }
 
     const body = {
-      message: `Sync ${currentProfile.name} - ${new Date().toLocaleDateString('fr-FR')}`,
+      message: 'Sync ' + currentProfile.name + ' - ' + new Date().toLocaleDateString('fr-FR'),
       content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
     };
     if (sha) body.sha = sha;
 
     const putRes = await fetch(url, {
       method: 'PUT',
-      headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
       body: JSON.stringify(body)
     });
 
@@ -312,7 +312,9 @@ async function syncToGitHub() {
       updateSyncStatus(true);
       return true;
     }
+    window._lastSyncError = 'HTTP ' + putRes.status + ': ' + (await putRes.text()).substring(0, 200);
   } catch(e) {
+    window._lastSyncError = e.message || String(e);
     console.warn('Sync GitHub échoué:', e);
   }
   return false;
@@ -324,7 +326,7 @@ async function loadFromGitHub(profileId) {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
 
   try {
-    const headers = token ? { 'Authorization': `token ${token}`, 'If-None-Match': '' } : {};
+    const headers = token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'If-None-Match': '' } : {};
     const res = await fetch(url, { headers });
     if (!res.ok) return false;
 

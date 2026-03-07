@@ -303,7 +303,7 @@
       const cat = loadCat();
       renderCat(cat);
     } else {
-      msg.textContent = '❌ Erreur — vérifie le token et la connexion.'; msg.style.color = '#e74c3c';
+      msg.textContent = '❌ Erreur — vérifie le token et la connexion.' + (window._lastSyncError ? ' (' + window._lastSyncError + ')' : ''); msg.style.color = '#e74c3c';
     }
   }
 
