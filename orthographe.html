@@ -15,13 +15,10 @@
   <div class="card">
     <h1>✏️ Orthographe</h1>
     <p class="subtitle" id="home-subtitle">Deviens un champion de l'orthographe !</p>
-    <div class="level-badge">
-      <div class="level-icon" id="level-icon">🌱</div>
-      <div class="level-info">
-        <div class="level-name" id="level-name">Apprenti</div>
-        <div class="level-xp" id="level-xp">0 XP</div>
-        <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
-      </div>
+    <div class="coin-badge" id="coin-badge">
+      <span class="coin-icon">🪙</span>
+      <span class="coin-count" id="coin-count">0</span>
+      <span class="coin-label">pièces</span>
     </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="value" id="stat-sessions">0</div><div class="label">Séances</div></div>
@@ -52,7 +49,7 @@
       <div class="score-display">
         <div>✅ <span id="sess-correct">0</span></div>
         <div>❌ <span id="sess-wrong">0</span></div>
-        <div>⭐ <span id="sess-score">0</span></div>
+        <div>🪙 <span id="sess-score">0</span></div>
       </div>
       <div id="timer-text">20:00</div>
     </div>
@@ -93,6 +90,7 @@
       <div class="result-stat"><div class="val" id="res-wrong">0</div><div class="lbl">Erreurs ❌</div></div>
     </div>
     <div class="xp-gain" id="xp-gain" style="display:none"></div>
+    <a href="index.html" class="btn btn-eval" id="btn-see-cat" style="text-align:center;text-decoration:none;display:none">🐱 Voir mon chat !</a>
     <div id="errors-section" style="display:none">
       <div class="errors-section"><h3>❌ À retravailler :</h3><div id="errors-list"></div></div>
     </div>
@@ -154,17 +152,8 @@ let gameData, session, timerInterval;
 // ACCUEIL
 // ================================================================
 function updateHomeUI() {
-  const level = getLevel(gameData.xp);
-  const next  = LEVELS[LEVELS.indexOf(level) + 1];
-  document.getElementById('level-icon').textContent = level.icon;
-  document.getElementById('level-name').textContent = level.name;
-  if (next) {
-    document.getElementById('xp-fill').style.width  = ((gameData.xp - level.min) / (next.min - level.min) * 100) + '%';
-    document.getElementById('level-xp').textContent = `${gameData.xp} XP — prochain : ${next.min} XP`;
-  } else {
-    document.getElementById('xp-fill').style.width  = '100%';
-    document.getElementById('level-xp').textContent = `${gameData.xp} XP — MAX ! 🎉`;
-  }
+  const cat = loadCat();
+  document.getElementById('coin-count').textContent = cat.coins || 0;
   document.getElementById('stat-sessions').textContent  = gameData.sessions;
   document.getElementById('stat-best').textContent      = gameData.bestPct + '%';
   document.getElementById('stat-questions').textContent = gameData.totalQ;
@@ -189,7 +178,7 @@ function startMode(mode) {
   }).filter(Boolean) : null;
 
   session = {
-    mode, correct: 0, wrong: 0, streak: 0, xpGained: 0, score: 0,
+    mode, correct: 0, wrong: 0, streak: 0, coinsEarned: 0, score: 0,
     errors: [], answered: false,
     evalQuestions: evalQs, evalIndex: 0,
     pool: mode === 'normal' ? buildOrthoNormalPool(gameData.stats) :
@@ -300,11 +289,11 @@ function handleResult(correct, userAnswer, expected, explanation) {
   const fb = document.getElementById('feedback');
   if (correct) {
     session.correct++; session.streak++;
-    let xp = session.streak >= 5 ? 20 : session.streak >= 3 ? 15 : 10;
-    session.xpGained += xp; session.score += xp;
+    let coins = session.streak >= 5 ? 5 : session.streak >= 3 ? 3 : 2;
+    session.coinsEarned += coins; session.score += coins;
     fb.className = 'feedback correct'; fb.style.display = 'block';
     document.getElementById('feedback-title').textContent =
-      ['✅ Excellent !','✅ Bravo !','✅ Parfait !','✅ Super !'][Math.floor(Math.random()*4)] + ' +' + xp + ' XP';
+      ['✅ Excellent !','✅ Bravo !','✅ Parfait !','✅ Super !'][Math.floor(Math.random()*4)] + ' +' + coins + ' 🪙';
     document.getElementById('feedback-answer').textContent = '';
     const st = document.getElementById('streak-display');
     st.textContent = session.streak >= 5 ? `🔥🔥 Série de ${session.streak} !` : session.streak >= 3 ? `🔥 Série de ${session.streak} !` : '';
@@ -335,7 +324,10 @@ function endSession() {
   clearInterval(timerInterval);
   const total = session.correct + session.wrong;
   const pct = total > 0 ? Math.round(session.correct / total * 100) : 0;
-  gameData.xp += session.xpGained; gameData.sessions++; gameData.totalQ += total;
+  const bonusCoins = pct === 100 ? 10 : 5;
+  const totalCoins = session.coinsEarned + bonusCoins;
+  const cat = loadCat(); earnCoins(cat, totalCoins);
+  gameData.xp += totalCoins * 5; gameData.sessions++; gameData.totalQ += total;
   gameData.totalCorrect += session.correct;
   if (pct > gameData.bestPct) gameData.bestPct = pct;
   saveGame(SUBJECT, gameData);
@@ -356,14 +348,17 @@ function endSession() {
     v.innerHTML = passed
       ? `✅ RÉUSSI !<br><small>${session.wrong} faute${session.wrong!==1?'s':''} sur ${session.evalQuestions.length}</small>`
       : `💪 CONTINUE !<br><small>${session.wrong} faute${session.wrong>1?'s':''} — objectif : max 1</small>`;
-    document.getElementById('xp-gain').style.display = 'none';
+    document.getElementById('xp-gain').style.display = 'block';
+    document.getElementById('xp-gain').textContent = `+${totalCoins} 🪙 pour ton chat !`;
+    document.getElementById('btn-see-cat').style.display = 'block';
     document.getElementById('res-new-session').onclick = () => startMode('evaluation');
     document.getElementById('res-new-session').textContent = '🎯 Retenter';
   } else {
     const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '💪';
     document.getElementById('result-pct').textContent = emoji + ' ' + pct + '%';
     const xpEl = document.getElementById('xp-gain');
-    xpEl.style.display = 'block'; xpEl.textContent = `+${session.xpGained} XP !`;
+    xpEl.style.display = 'block'; xpEl.textContent = `+${totalCoins} 🪙 pour ton chat !`;
+    document.getElementById('btn-see-cat').style.display = 'block';
     document.getElementById('res-new-session').onclick = () => startMode('normal');
     document.getElementById('res-new-session').textContent = '🔄 Nouvelle séance';
   }

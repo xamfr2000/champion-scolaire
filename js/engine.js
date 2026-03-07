@@ -1,6 +1,6 @@
 /* ================================================================
    Champion Scolaire — Moteur de quiz partagé
-   Gère : profils, niveaux, XP, timer, gamification, sauvegarde
+   Gère : profils, niveaux, XP, timer, gamification, sauvegarde, chat virtuel
    ================================================================ */
 
 // ================================================================
@@ -27,7 +27,7 @@ function getLastProfile() {
 }
 
 // ================================================================
-// NIVEAUX
+// NIVEAUX (gardés pour compatibilité)
 // ================================================================
 const LEVELS = [
   { min: 0,    max: 100,  name: 'Apprenti',      icon: '🌱' },
@@ -61,7 +61,6 @@ function newSave() {
 
 function saveGame(subject, data) {
   localStorage.setItem(getProfileKey(subject), JSON.stringify(data));
-  // Sync silencieux vers GitHub (non bloquant)
   syncToGitHub().catch(() => {});
 }
 
@@ -130,7 +129,6 @@ function doImport(code) {
   if (code.startsWith('CHAMP1:')) {
     json = decodeURIComponent(escape(atob(code.slice(7))));
   } else if (code.startsWith('CONJ1:')) {
-    // Rétro-compatibilité avec l'ancien format
     json = decodeURIComponent(escape(atob(code.slice(6))));
     const data = JSON.parse(json);
     if (!data.stats) data.stats = {};
@@ -145,6 +143,123 @@ function doImport(code) {
 }
 
 // ================================================================
+// CHAT VIRTUEL (Tamagotchi)
+// ================================================================
+const CAT_ACTIONS = [
+  { id: 'feed',   icon: '🍣', name: 'Nourrir', cost: 8,  stat: 'hunger',      boost: 30, msg: 'Miam miam !' },
+  { id: 'cuddle', icon: '🤗', name: 'Câliner', cost: 8,  stat: 'happiness',   boost: 30, msg: 'Ronron...' },
+  { id: 'bath',   icon: '🛁', name: 'Laver',   cost: 8,  stat: 'cleanliness', boost: 30, msg: 'Tout propre !' },
+  { id: 'sleep',  icon: '😴', name: 'Dormir',  cost: 8,  stat: 'energy',      boost: 30, msg: 'Zzz...' },
+  { id: 'play',   icon: '🧶', name: 'Jouer',   cost: 12, stat: 'happiness',   boost: 25, msg: 'Miaou !' }
+];
+
+const CAT_STAT_ICONS = { hunger: '🍣', happiness: '💕', cleanliness: '🛁', energy: '⚡' };
+const CAT_STAT_NAMES = { hunger: 'Faim', happiness: 'Bonheur', cleanliness: 'Propreté', energy: 'Énergie' };
+const CAT_DECAY_PER_HOUR = 3;
+
+function loadCat(profileId) {
+  const id = profileId || (currentProfile && currentProfile.id);
+  if (!id) return newCat();
+  try {
+    const raw = JSON.parse(localStorage.getItem(`champion_${id}_cat`));
+    if (raw) { applyCatDecay(raw); return raw; }
+  } catch(e) {}
+  return newCat();
+}
+
+function newCat() {
+  return { hunger: 80, happiness: 80, cleanliness: 80, energy: 80, coins: 0, lastUpdate: Date.now() };
+}
+
+function saveCat(cat, profileId) {
+  const id = profileId || (currentProfile && currentProfile.id);
+  if (!id) return;
+  cat.lastUpdate = Date.now();
+  localStorage.setItem(`champion_${id}_cat`, JSON.stringify(cat));
+}
+
+function applyCatDecay(cat) {
+  const hours = (Date.now() - (cat.lastUpdate || Date.now())) / 3600000;
+  const decay = Math.floor(hours * CAT_DECAY_PER_HOUR);
+  if (decay > 0) {
+    ['hunger','happiness','cleanliness','energy'].forEach(s => {
+      cat[s] = Math.max(0, (cat[s] || 0) - decay);
+    });
+    cat.lastUpdate = Date.now();
+  }
+}
+
+function getCatMood(cat) {
+  const avg = ((cat.hunger||0) + (cat.happiness||0) + (cat.cleanliness||0) + (cat.energy||0)) / 4;
+  if (avg > 80) return 'ecstatic';
+  if (avg > 60) return 'happy';
+  if (avg > 40) return 'content';
+  if (avg > 20) return 'sad';
+  return 'crying';
+}
+
+const CAT_MOOD_EMOJI = { ecstatic: '😻', happy: '😺', content: '😊', sad: '🥺', crying: '😿' };
+
+function getCatMessage(cat) {
+  const mood = getCatMood(cat);
+  const stats = { hunger: cat.hunger||0, happiness: cat.happiness||0, cleanliness: cat.cleanliness||0, energy: cat.energy||0 };
+  const lowest = Object.entries(stats).sort((a,b) => a[1] - b[1])[0];
+  if (mood === 'ecstatic') return ['Ronron ! Je suis trop bien !', 'Je t\'adore !', 'Mrrr... le bonheur !'][Math.floor(Math.random()*3)];
+  if (mood === 'happy') return ['Je suis content !', 'Miaou !', 'C\'est chouette !'][Math.floor(Math.random()*3)];
+  if (mood === 'content') return 'Ça va ! Fais un quiz pour gagner des pièces !';
+  const msgs = {
+    hunger: mood === 'sad' ? 'Mon ventre gargouille...' : 'J\'ai tellement faim...',
+    happiness: mood === 'sad' ? 'Je m\'ennuie un peu...' : 'Je suis triste... câline-moi !',
+    cleanliness: mood === 'sad' ? 'Un bain me ferait du bien...' : 'Je suis tout sale...',
+    energy: mood === 'sad' ? 'Je suis fatigué...' : 'J\'ai plus d\'énergie...'
+  };
+  return msgs[lowest[0]];
+}
+
+function doCatAction(cat, actionId) {
+  const action = CAT_ACTIONS.find(a => a.id === actionId);
+  if (!action || (cat.coins || 0) < action.cost) return null;
+  cat.coins -= action.cost;
+  cat[action.stat] = Math.min(100, (cat[action.stat] || 0) + action.boost);
+  saveCat(cat);
+  return action;
+}
+
+function earnCoins(cat, amount) {
+  cat.coins = (cat.coins || 0) + amount;
+  saveCat(cat);
+}
+
+function getCatSVG() {
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path class="cat-tail" d="M155,155 C175,135 185,105 170,90" stroke="#FFD699" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <ellipse cx="100" cy="160" rx="50" ry="35" fill="#FFD699"/>
+  <ellipse cx="72" cy="190" rx="16" ry="8" fill="#FFCC80"/>
+  <ellipse cx="128" cy="190" rx="16" ry="8" fill="#FFCC80"/>
+  <circle cx="100" cy="90" r="48" fill="#FFD699"/>
+  <polygon points="62,55 50,15 85,42" fill="#FFD699"/>
+  <polygon points="65,50 56,24 80,42" fill="#FFB5C5"/>
+  <polygon points="138,55 150,15 115,42" fill="#FFD699"/>
+  <polygon points="135,50 144,24 120,42" fill="#FFB5C5"/>
+  <g class="cat-eyes-happy"><ellipse cx="78" cy="85" rx="9" ry="10" fill="#3E3E3E"/><ellipse cx="122" cy="85" rx="9" ry="10" fill="#3E3E3E"/><circle cx="82" cy="81" r="3" fill="white"/><circle cx="126" cy="81" r="3" fill="white"/></g>
+  <g class="cat-eyes-ecstatic"><path d="M69,85 Q78,75 87,85" stroke="#3E3E3E" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M113,85 Q122,75 131,85" stroke="#3E3E3E" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>
+  <g class="cat-eyes-sad"><ellipse cx="78" cy="88" rx="9" ry="6" fill="#3E3E3E"/><ellipse cx="122" cy="88" rx="9" ry="6" fill="#3E3E3E"/><circle cx="81" cy="86" r="2" fill="white"/><circle cx="125" cy="86" r="2" fill="white"/></g>
+  <g class="cat-eyes-crying"><ellipse cx="78" cy="88" rx="9" ry="6" fill="#3E3E3E"/><ellipse cx="122" cy="88" rx="9" ry="6" fill="#3E3E3E"/><ellipse cx="72" cy="98" rx="3" ry="5" fill="#87CEEB" opacity="0.7" class="cat-tear"/><ellipse cx="128" cy="98" rx="3" ry="5" fill="#87CEEB" opacity="0.7" class="cat-tear"/></g>
+  <path d="M97,100 L100,105 L103,100 Z" fill="#FF9EB5"/>
+  <path class="cat-mouth-happy" d="M91,109 Q95,115 100,109 Q105,115 109,109" stroke="#3E3E3E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path class="cat-mouth-ecstatic" d="M88,107 Q100,120 112,107" stroke="#3E3E3E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path class="cat-mouth-content" d="M94,110 L106,110" stroke="#3E3E3E" stroke-width="2" stroke-linecap="round"/>
+  <path class="cat-mouth-sad" d="M92,113 Q100,107 108,113" stroke="#3E3E3E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <ellipse class="cat-blush" cx="62" cy="100" rx="9" ry="5" fill="#FFB5C5" opacity="0.35"/>
+  <ellipse class="cat-blush" cx="138" cy="100" rx="9" ry="5" fill="#FFB5C5" opacity="0.35"/>
+  <line x1="38" y1="95" x2="68" y2="100" stroke="#DDD" stroke-width="1.5"/>
+  <line x1="38" y1="108" x2="68" y2="105" stroke="#DDD" stroke-width="1.5"/>
+  <line x1="132" y1="100" x2="162" y2="95" stroke="#DDD" stroke-width="1.5"/>
+  <line x1="132" y1="105" x2="162" y2="108" stroke="#DDD" stroke-width="1.5"/>
+  </svg>`;
+}
+
+// ================================================================
 // SYNCHRONISATION GITHUB
 // ================================================================
 const GITHUB_REPO = 'xamfr2000/champion-scolaire';
@@ -155,7 +270,6 @@ function getGitHubToken() { return localStorage.getItem('champion_github_token')
 function setGitHubToken(token) { localStorage.setItem('champion_github_token', token); }
 function removeGitHubToken() { localStorage.removeItem('champion_github_token'); }
 
-// Sauvegarder la progression du profil actuel vers GitHub
 async function syncToGitHub() {
   const token = getGitHubToken();
   if (!token || !currentProfile) return false;
@@ -165,12 +279,12 @@ async function syncToGitHub() {
     const key = `champion_${currentProfile.id}_${s}`;
     try { data[s] = JSON.parse(localStorage.getItem(key)) || newSave(); } catch(e) { data[s] = newSave(); }
   });
+  try { data.cat = JSON.parse(localStorage.getItem(`champion_${currentProfile.id}_cat`)) || newCat(); } catch(e) { data.cat = newCat(); }
 
   const path = `${GITHUB_DATA_PATH}/${currentProfile.id}.json`;
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
 
   try {
-    // Récupérer le SHA actuel du fichier (nécessaire pour la mise à jour)
     let sha = null;
     const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'If-None-Match': '' } });
     if (getRes.ok) {
@@ -200,7 +314,6 @@ async function syncToGitHub() {
   return false;
 }
 
-// Charger la progression depuis GitHub et fusionner avec le local
 async function loadFromGitHub(profileId) {
   const token = getGitHubToken();
   const path = `${GITHUB_DATA_PATH}/${profileId}.json`;
@@ -215,7 +328,6 @@ async function loadFromGitHub(profileId) {
     const content = decodeURIComponent(escape(atob(fileData.content)));
     const remoteData = JSON.parse(content);
 
-    // Fusionner par matière : garder la version avec le plus de questions jouées
     ALL_SUBJECTS.forEach(s => {
       const key = `champion_${profileId}_${s}`;
       let local;
@@ -226,8 +338,6 @@ async function loadFromGitHub(profileId) {
       if (!local || (remote.totalQ || 0) > (local.totalQ || 0)) {
         localStorage.setItem(key, JSON.stringify(remote));
       } else if (local && remote) {
-        // Fusionner les stats détaillées si le local a plus de questions
-        // mais que le remote a des stats sur des combos différents
         Object.entries(remote.stats || {}).forEach(([k, rs]) => {
           if (!local.stats[k]) {
             local.stats[k] = rs;
@@ -239,6 +349,16 @@ async function loadFromGitHub(profileId) {
       }
     });
 
+    // Fusionner le chat
+    if (remoteData.cat) {
+      const catKey = `champion_${profileId}_cat`;
+      let localCat;
+      try { localCat = JSON.parse(localStorage.getItem(catKey)); } catch(e) {}
+      if (!localCat || (remoteData.cat.coins || 0) > (localCat.coins || 0)) {
+        localStorage.setItem(catKey, JSON.stringify(remoteData.cat));
+      }
+    }
+
     localStorage.setItem('champion_lastSync', new Date().toISOString());
     return true;
   } catch(e) {
@@ -247,7 +367,6 @@ async function loadFromGitHub(profileId) {
   return false;
 }
 
-// Indicateur visuel de sync (mis à jour si l'élément existe dans la page)
 function updateSyncStatus(success) {
   const el = document.getElementById('sync-status');
   if (!el) return;

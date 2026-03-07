@@ -9,14 +9,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Champion">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>">
 </head>
 <body>
 
 <!-- ÉCRAN PIN -->
 <div id="screen-pin" class="screen active" style="width:100%;max-width:640px">
   <div class="card" style="text-align:center">
-    <h1>🎯 Champion<br>Scolaire !</h1>
+    <h1>🐱 Champion<br>Scolaire !</h1>
     <p class="subtitle">Entre le code familial pour commencer</p>
     <input type="password" id="pin-input" maxlength="6" placeholder="••••"
       style="width:140px;padding:14px;font-size:1.6em;text-align:center;border:3px solid #e8eaff;border-radius:14px;outline:none;font-family:inherit;letter-spacing:8px"
@@ -29,15 +29,24 @@
 <!-- ÉCRAN PRINCIPAL -->
 <div id="screen-main" class="screen" style="width:100%;max-width:640px">
   <div class="card">
-    <h1>🎯 Champion<br>Scolaire !</h1>
+    <h1>🐱 Champion<br>Scolaire !</h1>
     <p class="subtitle">Choisis ton profil pour commencer</p>
-
     <div class="profile-grid" id="profile-grid"></div>
+  </div>
+
+  <!-- CARTE DU CHAT -->
+  <div class="card" id="cat-card" style="display:none">
+    <div class="cat-scene" id="cat-scene" data-mood="happy"></div>
+    <div class="cat-speech" id="cat-speech">Miaou !</div>
+    <div class="cat-coin-display">🪙 <span id="cat-coins">0</span> pièces</div>
+    <div class="cat-stats" id="cat-stats"></div>
+    <div class="cat-action-feedback" id="cat-action-feedback"></div>
+    <div class="cat-actions" id="cat-actions"></div>
   </div>
 
   <div class="card" id="subject-card" style="display:none">
     <h2 id="welcome-msg">Salut !</h2>
-    <p class="subtitle">Choisis ta matière</p>
+    <p class="subtitle">Gagne des pièces en faisant des quiz !</p>
 
     <div class="subject-grid">
       <a href="conjugaison.html" class="subject-card">
@@ -83,7 +92,7 @@
     <h3>🔑 Token GitHub</h3>
     <p style="color:#888;font-size:0.82em;margin-bottom:8px">
       Crée un token sur GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.<br>
-      Permissions : <strong>Contents</strong> (Read and Write) sur le dépôt <strong>projets-perso</strong>.
+      Permissions : <strong>Contents</strong> (Read and Write) sur le dépôt <strong>champion-scolaire</strong>.
     </p>
     <input type="password" id="token-input" placeholder="github_pat_..."
       style="width:100%;padding:12px;border:2px solid #e8eaff;border-radius:12px;font-size:0.95em;font-family:monospace;outline:none;margin-bottom:8px">
@@ -99,14 +108,11 @@
     <button class="btn btn-secondary" onclick="showScreen('screen-main')">← Retour</button>
   </div>
 </div>
-</div>
 
 <script src="js/engine.js"></script>
 <script>
-  // Code familial — change-le ici si besoin
   const FAMILY_PIN = '2025';
 
-  // Si déjà authentifié dans cette session, skip le PIN
   if (sessionStorage.getItem('champion_auth') === 'ok') {
     document.getElementById('screen-pin').classList.remove('active');
     document.getElementById('screen-main').classList.add('active');
@@ -130,25 +136,21 @@
   const grid = document.getElementById('profile-grid');
 
   PROFILES.forEach(p => {
-    // Charger le XP total de toutes les matières
-    let totalXp = 0;
-    ['conjugaison','grammaire','calcul','orthographe'].forEach(s => {
-      try { var d = JSON.parse(localStorage.getItem(`champion_${p.id}_${s}`)); totalXp += (d && d.xp) || 0; } catch(e) {}
-    });
-    const level = getLevel(totalXp);
+    const cat = loadCat(p.id);
+    const mood = getCatMood(cat);
+    const moodEmoji = CAT_MOOD_EMOJI[mood];
 
     const card = document.createElement('div');
     card.className = 'profile-card';
     card.innerHTML = `
       <div class="profile-avatar">${p.avatar}</div>
       <div class="profile-name">${p.name}</div>
-      <div class="profile-level">${level.icon} ${level.name}</div>
+      <div class="profile-level">${moodEmoji} 🪙 ${cat.coins || 0}</div>
     `;
     card.onclick = () => selectProfile(p.id);
     grid.appendChild(card);
   });
 
-  // Auto-select last used profile
   const last = getLastProfile();
   if (last && PROFILES.find(p => p.id === last)) {
     selectProfile(last);
@@ -158,6 +160,7 @@
     setProfile(id);
     document.getElementById('welcome-msg').textContent =
       `Salut ${currentProfile.name} ${currentProfile.avatar} !`;
+    document.getElementById('cat-card').style.display = '';
     document.getElementById('subject-card').style.display = '';
     document.getElementById('profile-grid').parentElement.querySelectorAll('.profile-card').forEach(c => {
       c.style.borderColor = '#e8eaff';
@@ -165,30 +168,77 @@
     const idx = PROFILES.findIndex(p => p.id === id);
     grid.children[idx].style.borderColor = '#6C63FF';
 
-    // Charger la progression depuis GitHub
+    let cat = loadCat(id);
+    renderCat(cat);
+
     if (getGitHubToken()) {
       updateSyncStatus(false);
       const ok = await loadFromGitHub(id);
       updateSyncStatus(ok);
-      if (ok) refreshProfileCards();
+      if (ok) {
+        cat = loadCat(id);
+        renderCat(cat);
+        refreshProfileCards();
+      }
     } else {
       updateSyncStatus(false);
     }
   }
 
+  function renderCat(cat) {
+    const scene = document.getElementById('cat-scene');
+    scene.setAttribute('data-mood', getCatMood(cat));
+    scene.innerHTML = getCatSVG();
+
+    document.getElementById('cat-speech').textContent = getCatMessage(cat);
+    document.getElementById('cat-coins').textContent = cat.coins || 0;
+
+    const statsEl = document.getElementById('cat-stats');
+    statsEl.innerHTML = ['hunger','happiness','cleanliness','energy'].map(s => {
+      const val = cat[s] || 0;
+      const cls = val > 60 ? 'high' : val > 30 ? 'medium' : 'low';
+      return `<div class="cat-stat">
+        <span class="cat-stat-icon">${CAT_STAT_ICONS[s]}</span>
+        <div class="cat-stat-bar"><div class="cat-stat-fill ${cls}" style="width:${val}%"></div></div>
+      </div>`;
+    }).join('');
+
+    const actionsEl = document.getElementById('cat-actions');
+    actionsEl.innerHTML = CAT_ACTIONS.map(a => {
+      const canAfford = (cat.coins || 0) >= a.cost;
+      return `<button class="cat-action-btn" onclick="doCareAction('${a.id}')" ${canAfford ? '' : 'disabled'}>
+        <span class="action-icon">${a.icon}</span>
+        <span class="action-name">${a.name}</span>
+        <span class="action-cost">${a.cost} 🪙</span>
+      </button>`;
+    }).join('');
+  }
+
+  function doCareAction(actionId) {
+    const cat = loadCat();
+    const action = doCatAction(cat, actionId);
+    if (action) {
+      document.getElementById('cat-action-feedback').textContent = action.msg;
+      renderCat(cat);
+      refreshProfileCards();
+      syncToGitHub().catch(() => {});
+      setTimeout(() => {
+        document.getElementById('cat-action-feedback').textContent = '';
+      }, 2000);
+    }
+  }
+
   function switchProfile() {
+    document.getElementById('cat-card').style.display = 'none';
     document.getElementById('subject-card').style.display = 'none';
     document.querySelectorAll('.profile-card').forEach(c => c.style.borderColor = '#e8eaff');
   }
 
   function refreshProfileCards() {
     PROFILES.forEach((p, idx) => {
-      let totalXp = 0;
-      ['conjugaison','grammaire','calcul','orthographe'].forEach(s => {
-        try { var d = JSON.parse(localStorage.getItem(`champion_${p.id}_${s}`)); totalXp += (d && d.xp) || 0; } catch(e) {}
-      });
-      const level = getLevel(totalXp);
-      grid.children[idx].querySelector('.profile-level').textContent = `${level.icon} ${level.name}`;
+      const cat = loadCat(p.id);
+      const mood = getCatMood(cat);
+      grid.children[idx].querySelector('.profile-level').textContent = `${CAT_MOOD_EMOJI[mood]} 🪙 ${cat.coins || 0}`;
     });
   }
 
@@ -216,7 +266,6 @@
     setGitHubToken(token);
     document.getElementById('token-input').value = '';
     updateSettingsUI();
-    // Tester le token en synchronisant
     manualSync();
   }
 
@@ -235,7 +284,6 @@
 
     msg.textContent = '⏳ Synchronisation en cours...'; msg.style.color = '#6C63FF';
 
-    // Charger depuis GitHub pour chaque profil
     let ok = true;
     for (const p of PROFILES) {
       setProfile(p.id);
@@ -244,7 +292,6 @@
       if (!loaded && !synced) ok = false;
     }
 
-    // Rétablir le profil sélectionné
     const lastId = getLastProfile();
     if (lastId) setProfile(lastId);
 
@@ -253,16 +300,16 @@
       refreshProfileCards();
       updateSettingsUI();
       updateSyncStatus(true);
+      const cat = loadCat();
+      renderCat(cat);
     } else {
       msg.textContent = '❌ Erreur — vérifie le token et la connexion.'; msg.style.color = '#e74c3c';
     }
   }
 
-  // Override showScreen pour mettre à jour les paramètres
   const _origShowScreen = showScreen;
   showScreen = function(id) { _origShowScreen(id); if (id === 'screen-settings') updateSettingsUI(); };
 
-  // Init sync status
   updateSyncStatus(!!getGitHubToken() && !!localStorage.getItem('champion_lastSync'));
 </script>
 </body>
