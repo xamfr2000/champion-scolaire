@@ -311,6 +311,8 @@
   showScreen = function(id) { _origShowScreen(id); if (id === 'screen-settings') updateSettingsUI(); };
 
   updateSyncStatus(!!getGitHubToken() && !!localStorage.getItem('champion_lastSync'));
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function() {});
 </script>
 </body>
 </html>
