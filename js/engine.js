@@ -159,7 +159,7 @@ const CAT_ACTIONS = [
 
 const CAT_STAT_ICONS = { hunger: '🍣', happiness: '💕', cleanliness: '🛁', energy: '⚡' };
 const CAT_STAT_NAMES = { hunger: 'Faim', happiness: 'Bonheur', cleanliness: 'Propreté', energy: 'Énergie' };
-const CAT_DECAY_PER_HOUR = 3;
+const CAT_DECAY_PER_HOUR = 80;
 
 function loadCat(profileId) {
   const id = profileId || (currentProfile && currentProfile.id);
