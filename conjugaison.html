@@ -29,9 +29,21 @@
       <div class="stat-card"><div class="value" id="stat-global">0%</div><div class="label">Réussite</div></div>
     </div>
 
-    <button class="btn btn-primary" onclick="startMode('normal')">🚀 Séance normale (20 min)</button>
+    <p class="duration-label">🚀 Séance normale</p>
+    <div class="duration-grid">
+      <button class="duration-btn" onclick="startMode('normal',5)">5 min</button>
+      <button class="duration-btn" onclick="startMode('normal',10)">10 min</button>
+      <button class="duration-btn" onclick="startMode('normal',15)">15 min</button>
+      <button class="duration-btn" onclick="startMode('normal',20)">20 min</button>
+    </div>
     <div id="btn-revision-wrap" style="display:none">
-      <button class="btn btn-revision" onclick="startMode('revision')">🔄 Révision — erreurs passées (15 min)</button>
+      <p class="duration-label">🔄 Révision — erreurs passées</p>
+      <div class="duration-grid">
+        <button class="duration-btn" onclick="startMode('revision',5)">5 min</button>
+        <button class="duration-btn" onclick="startMode('revision',10)">10 min</button>
+        <button class="duration-btn" onclick="startMode('revision',15)">15 min</button>
+        <button class="duration-btn" onclick="startMode('revision',20)">20 min</button>
+      </div>
     </div>
     <div id="btn-eval-wrap" style="display:none">
       <button class="btn btn-eval" onclick="startMode('evaluation')">🎯 Évaluation Finale — max 1 faute !</button>
@@ -94,7 +106,7 @@
     <div id="errors-section" style="display:none">
       <div class="errors-section"><h3>❌ À retravailler :</h3><div id="errors-list"></div></div>
     </div>
-    <button class="btn btn-primary" id="res-new-session" onclick="startMode('normal')">🔄 Nouvelle séance</button>
+    <button class="btn btn-primary" id="res-new-session" onclick="startMode('normal', 10)">🔄 Nouvelle séance</button>
     <button class="btn btn-secondary" onclick="showScreen('screen-home')">🏠 Accueil conjugaison</button>
   </div>
 </div>
@@ -185,10 +197,12 @@ function updateHomeUI() {
 // ================================================================
 // MODES
 // ================================================================
-function startMode(mode) {
+function startMode(mode, minutes) {
   clearInterval(timerInterval);
   const errors = getErrorCombos(gameData.stats);
   if (mode === 'evaluation' && errors.length === 0) { alert('Pas encore d\'erreurs !'); return; }
+
+  const duration = mode === 'evaluation' ? null : (minutes || 10) * 60;
 
   const evalQs = mode === 'evaluation' ? shuffle(errors).slice(0, 35).map(e => {
     const [inf, tense, p] = e.key.split('|');
@@ -196,13 +210,13 @@ function startMode(mode) {
   }) : null;
 
   session = {
-    mode, correct: 0, wrong: 0, streak: 0, coinsEarned: 0, score: 0,
+    mode, minutes: minutes || 10, correct: 0, wrong: 0, streak: 0, coinsEarned: 0, score: 0,
     errors: [], answered: false,
     evalQuestions: evalQs, evalIndex: 0,
     pool: mode === 'normal' ? buildNormalPool(gameData.stats) :
           mode === 'revision' ? buildRevisionPool(errors) : null,
-    timeLeft:  mode === 'evaluation' ? null : mode === 'revision' ? 15*60 : 20*60,
-    totalTime: mode === 'evaluation' ? null : mode === 'revision' ? 15*60 : 20*60
+    timeLeft: duration,
+    totalTime: duration
   };
 
   const labels  = { normal:'🚀 Séance', revision:'🔄 Révision', evaluation:'🎯 Évaluation' };
@@ -348,7 +362,7 @@ function endSession() {
     const xpEl = document.getElementById('xp-gain');
     xpEl.style.display = 'block'; xpEl.textContent = `+${totalCoins} 🪙 pour ton chat !`;
     document.getElementById('btn-see-cat').style.display = 'block';
-    document.getElementById('res-new-session').onclick = () => startMode('normal');
+    document.getElementById('res-new-session').onclick = () => startMode('normal', session.minutes);
     document.getElementById('res-new-session').textContent = '🔄 Nouvelle séance';
   }
 

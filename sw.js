@@ -1,4 +1,4 @@
-const CACHE_NAME = 'champion-v5';
+const CACHE_NAME = 'champion-v6';
 const URLS = [
   './',
   'index.html',
