@@ -1,4 +1,4 @@
-const CACHE_NAME = 'champion-v4';
+const CACHE_NAME = 'champion-v5';
 const URLS = [
   './',
   'index.html',
@@ -15,6 +15,7 @@ const URLS = [
 ];
 
 self.addEventListener('install', e => {
+  self.skipWaiting();
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS)));
 });
 
@@ -26,8 +27,11 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    Promise.all([
+      clients.claim(),
+      caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      )
+    ])
   );
 });
