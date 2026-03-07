@@ -237,12 +237,16 @@ function gramQuestionDisplay(q) {
   }
 }
 
-function checkGramAnswer(q, userAnswer) {
-  const n = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
-  return n(userAnswer) === n(q.reponse);
+function gramGetAnswer(q) {
+  return q.type === 'pluriel' ? q.pluriel : q.reponse;
 }
 
-function gramDisplayAnswer(q) { return q.reponse; }
+function checkGramAnswer(q, userAnswer) {
+  const n = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  return n(userAnswer) === n(gramGetAnswer(q));
+}
+
+function gramDisplayAnswer(q) { return gramGetAnswer(q); }
 function gramExplanation(q) { return q.explication || q.regle || ''; }
 function gramComboKey(q) { return q.id; }
 
