@@ -61,6 +61,8 @@ function newSave() {
 
 function saveGame(subject, data) {
   localStorage.setItem(getProfileKey(subject), JSON.stringify(data));
+  // Sync silencieux vers GitHub (non bloquant)
+  syncToGitHub().catch(() => {});
 }
 
 // ================================================================
@@ -140,4 +142,123 @@ function doImport(code) {
   if (!parsed.data || typeof parsed.data.xp !== 'number') throw new Error('Format invalide');
   if (!parsed.data.stats) parsed.data.stats = {};
   return parsed;
+}
+
+// ================================================================
+// SYNCHRONISATION GITHUB
+// ================================================================
+const GITHUB_REPO = 'xamfr2000/projets-perso';
+const GITHUB_DATA_PATH = 'champion-scolaire/data';
+const ALL_SUBJECTS = ['conjugaison', 'grammaire', 'calcul', 'orthographe'];
+
+function getGitHubToken() { return localStorage.getItem('champion_github_token'); }
+function setGitHubToken(token) { localStorage.setItem('champion_github_token', token); }
+function removeGitHubToken() { localStorage.removeItem('champion_github_token'); }
+
+// Sauvegarder la progression du profil actuel vers GitHub
+async function syncToGitHub() {
+  const token = getGitHubToken();
+  if (!token || !currentProfile) return false;
+
+  const data = {};
+  ALL_SUBJECTS.forEach(s => {
+    const key = `champion_${currentProfile.id}_${s}`;
+    try { data[s] = JSON.parse(localStorage.getItem(key)) || newSave(); } catch(e) { data[s] = newSave(); }
+  });
+
+  const path = `${GITHUB_DATA_PATH}/${currentProfile.id}.json`;
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
+
+  try {
+    // Récupérer le SHA actuel du fichier (nécessaire pour la mise à jour)
+    let sha = null;
+    const getRes = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'If-None-Match': '' } });
+    if (getRes.ok) {
+      sha = (await getRes.json()).sha;
+    }
+
+    const body = {
+      message: `Sync ${currentProfile.name} - ${new Date().toLocaleDateString('fr-FR')}`,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (putRes.ok) {
+      localStorage.setItem('champion_lastSync', new Date().toISOString());
+      updateSyncStatus(true);
+      return true;
+    }
+  } catch(e) {
+    console.warn('Sync GitHub échoué:', e);
+  }
+  return false;
+}
+
+// Charger la progression depuis GitHub et fusionner avec le local
+async function loadFromGitHub(profileId) {
+  const token = getGitHubToken();
+  const path = `${GITHUB_DATA_PATH}/${profileId}.json`;
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
+
+  try {
+    const headers = token ? { 'Authorization': `token ${token}`, 'If-None-Match': '' } : {};
+    const res = await fetch(url, { headers });
+    if (!res.ok) return false;
+
+    const fileData = await res.json();
+    const content = decodeURIComponent(escape(atob(fileData.content)));
+    const remoteData = JSON.parse(content);
+
+    // Fusionner par matière : garder la version avec le plus de questions jouées
+    ALL_SUBJECTS.forEach(s => {
+      const key = `champion_${profileId}_${s}`;
+      let local;
+      try { local = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+      const remote = remoteData[s];
+
+      if (!remote) return;
+      if (!local || (remote.totalQ || 0) > (local.totalQ || 0)) {
+        localStorage.setItem(key, JSON.stringify(remote));
+      } else if (local && remote) {
+        // Fusionner les stats détaillées si le local a plus de questions
+        // mais que le remote a des stats sur des combos différents
+        Object.entries(remote.stats || {}).forEach(([k, rs]) => {
+          if (!local.stats[k]) {
+            local.stats[k] = rs;
+          } else if (rs.asked > local.stats[k].asked) {
+            local.stats[k] = rs;
+          }
+        });
+        localStorage.setItem(key, JSON.stringify(local));
+      }
+    });
+
+    localStorage.setItem('champion_lastSync', new Date().toISOString());
+    return true;
+  } catch(e) {
+    console.warn('Chargement GitHub échoué:', e);
+  }
+  return false;
+}
+
+// Indicateur visuel de sync (mis à jour si l'élément existe dans la page)
+function updateSyncStatus(success) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (success) {
+    const last = localStorage.getItem('champion_lastSync');
+    const d = last ? new Date(last) : null;
+    const timeStr = d ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+    el.textContent = `☁️ Synchro OK ${timeStr}`;
+    el.style.color = '#27ae60';
+  } else {
+    el.textContent = '📱 Local uniquement';
+    el.style.color = '#888';
+  }
 }

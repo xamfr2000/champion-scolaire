@@ -1,0 +1,6 @@
+{
+  "conjugaison": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
+  "grammaire": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
+  "calcul": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
+  "orthographe": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} }
+}
