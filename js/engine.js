@@ -326,7 +326,7 @@ async function loadFromGitHub(profileId) {
   var url = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + path;
 
   try {
-    const headers = token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'If-None-Match': '' } : {};
+    const headers = token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } : {};
     const res = await fetch(url, { headers });
     if (!res.ok) return false;
 
