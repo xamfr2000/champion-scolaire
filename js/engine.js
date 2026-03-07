@@ -331,7 +331,7 @@ async function loadFromGitHub(profileId) {
     if (!res.ok) return false;
 
     const fileData = await res.json();
-    const content = decodeURIComponent(escape(atob(fileData.content)));
+    const content = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
     const remoteData = JSON.parse(content);
 
     ALL_SUBJECTS.forEach(s => {

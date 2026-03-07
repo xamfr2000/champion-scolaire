@@ -288,8 +288,8 @@
     for (const p of PROFILES) {
       setProfile(p.id);
       const loaded = await loadFromGitHub(p.id);
-      const synced = await syncToGitHub();
-      if (!loaded && !synced) ok = false;
+      if (!loaded) { ok = false; continue; }
+      await syncToGitHub();
     }
 
     const lastId = getLastProfile();
