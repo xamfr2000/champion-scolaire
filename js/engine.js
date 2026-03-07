@@ -147,8 +147,8 @@ function doImport(code) {
 // ================================================================
 // SYNCHRONISATION GITHUB
 // ================================================================
-const GITHUB_REPO = 'xamfr2000/projets-perso';
-const GITHUB_DATA_PATH = 'champion-scolaire/data';
+const GITHUB_REPO = 'xamfr2000/champion-scolaire';
+const GITHUB_DATA_PATH = 'data';
 const ALL_SUBJECTS = ['conjugaison', 'grammaire', 'calcul', 'orthographe'];
 
 function getGitHubToken() { return localStorage.getItem('champion_github_token'); }
