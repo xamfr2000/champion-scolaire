@@ -17,7 +17,7 @@
     <p class="subtitle" id="home-subtitle">Deviens un maître des verbes !</p>
 
     <div class="coin-badge" id="coin-badge">
-      <span class="coin-icon">🪙</span>
+      <span class="coin-icon">💰</span>
       <span class="coin-count" id="coin-count">0</span>
       <span class="coin-label">pièces</span>
     </div>
@@ -65,7 +65,7 @@
       <div class="score-display">
         <div>✅ <span id="sess-correct">0</span></div>
         <div>❌ <span id="sess-wrong">0</span></div>
-        <div>🪙 <span id="sess-score">0</span></div>
+        <div>💰 <span id="sess-score">0</span></div>
       </div>
       <div id="timer-text">20:00</div>
     </div>
@@ -288,7 +288,7 @@ function checkAnswer() {
     session.coinsEarned += coins; session.score += coins;
     inp.className = 'answer-input correct'; fb.className = 'feedback correct'; fb.style.display = 'block';
     document.getElementById('feedback-title').textContent =
-      ['✅ Excellent !','✅ Bravo !','✅ Parfait !','✅ Super !'][Math.floor(Math.random()*4)] + ' +' + coins + ' 🪙';
+      ['✅ Excellent !','✅ Bravo !','✅ Parfait !','✅ Super !'][Math.floor(Math.random()*4)] + ' +' + coins + ' 💰';
     document.getElementById('feedback-answer').textContent = '';
     const st = document.getElementById('streak-display');
     st.textContent = session.streak >= 5 ? `🔥🔥 Série de ${session.streak} !` : session.streak >= 3 ? `🔥 Série de ${session.streak} !` : '';
@@ -353,7 +353,7 @@ function endSession() {
       ? `✅ RÉUSSI !<br><small>${session.wrong} faute${session.wrong!==1?'s':''} sur ${session.evalQuestions.length}</small>`
       : `💪 CONTINUE !<br><small>${session.wrong} faute${session.wrong>1?'s':''} — objectif : max 1</small>`;
     document.getElementById('xp-gain').style.display = 'block';
-    document.getElementById('xp-gain').textContent = `+${totalCoins} 🪙 pour ton chat !`;
+    document.getElementById('xp-gain').textContent = `+${totalCoins} 💰 pour ton chat !`;
     document.getElementById('btn-see-cat').style.display = 'block';
     document.getElementById('res-new-session').onclick = () => startMode('evaluation');
     document.getElementById('res-new-session').textContent = '🎯 Retenter';
@@ -361,7 +361,7 @@ function endSession() {
     const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '💪';
     document.getElementById('result-pct').textContent = emoji + ' ' + pct + '%';
     const xpEl = document.getElementById('xp-gain');
-    xpEl.style.display = 'block'; xpEl.textContent = `+${totalCoins} 🪙 pour ton chat !`;
+    xpEl.style.display = 'block'; xpEl.textContent = `+${totalCoins} 💰 pour ton chat !`;
     document.getElementById('btn-see-cat').style.display = 'block';
     document.getElementById('res-new-session').onclick = () => startMode('normal', session.minutes);
     document.getElementById('res-new-session').textContent = '🔄 Nouvelle séance';

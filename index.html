@@ -38,7 +38,7 @@
   <div class="card" id="cat-card" style="display:none">
     <div class="cat-scene" id="cat-scene" data-mood="happy"></div>
     <div class="cat-speech" id="cat-speech">Miaou !</div>
-    <div class="cat-coin-display">🪙 <span id="cat-coins">0</span> pièces</div>
+    <div class="cat-coin-display">💰 <span id="cat-coins">0</span> pièces</div>
     <div class="cat-stats" id="cat-stats"></div>
     <div class="cat-action-feedback" id="cat-action-feedback"></div>
     <div class="cat-actions" id="cat-actions"></div>
@@ -145,7 +145,7 @@
     card.innerHTML = `
       <div class="profile-avatar">${p.avatar}</div>
       <div class="profile-name">${p.name}</div>
-      <div class="profile-level">${moodEmoji} 🪙 ${cat.coins || 0}</div>
+      <div class="profile-level">${moodEmoji} 💰 ${cat.coins || 0}</div>
     `;
     card.onclick = () => selectProfile(p.id);
     grid.appendChild(card);
@@ -209,7 +209,7 @@
       return `<button class="cat-action-btn" onclick="doCareAction('${a.id}')" ${canAfford ? '' : 'disabled'}>
         <span class="action-icon">${a.icon}</span>
         <span class="action-name">${a.name}</span>
-        <span class="action-cost">${a.cost} 🪙</span>
+        <span class="action-cost">${a.cost} 💰</span>
       </button>`;
     }).join('');
   }
@@ -238,7 +238,7 @@
     PROFILES.forEach((p, idx) => {
       const cat = loadCat(p.id);
       const mood = getCatMood(cat);
-      grid.children[idx].querySelector('.profile-level').textContent = `${CAT_MOOD_EMOJI[mood]} 🪙 ${cat.coins || 0}`;
+      grid.children[idx].querySelector('.profile-level').textContent = `${CAT_MOOD_EMOJI[mood]} 💰 ${cat.coins || 0}`;
     });
   }
 
