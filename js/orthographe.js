@@ -180,7 +180,7 @@ function buildOrthoNormalPool(stats) {
     let w = q.priority ? 1.4 : 0.7;
     if (s.asked === 0) w *= 0.8;
     else w *= (1 + rate * 2.5);
-    return { q, w };
+    return { q, w, _key: orthoComboKey(q) };
   });
 }
 
@@ -188,7 +188,7 @@ function buildOrthoRevisionPool(errorCombos) {
   const qMap = {};
   ALL_ORTHO_QS.forEach(q => qMap[orthoComboKey(q)] = q);
   const pool = [];
-  errorCombos.forEach(e => { if (qMap[e.key]) pool.push({ q: qMap[e.key], w: 2 + e.rate * 3 }); });
-  ALL_ORTHO_QS.forEach(q => pool.push({ q, w: 0.15 }));
+  errorCombos.forEach(e => { if (qMap[e.key]) pool.push({ q: qMap[e.key], w: 2 + e.rate * 3, _key: e.key }); });
+  ALL_ORTHO_QS.forEach(q => pool.push({ q, w: 0.15, _key: orthoComboKey(q) }));
   return pool;
 }

@@ -147,7 +147,7 @@ function buildNormalPool(stats) {
         let w = V[inf].priority ? 1.4 : 0.7;
         if (s.asked === 0) w *= 0.8;
         else w *= (1 + rate * 2.5);
-        pool.push({ inf, tense, person: p, w });
+        pool.push({ inf, tense, person: p, w, _key: comboKey([inf, tense, p]) });
       }
     });
   });
@@ -158,11 +158,11 @@ function buildRevisionPool(errorCombos) {
   const pool = [];
   errorCombos.forEach(e => {
     const [inf, tense, p] = e.key.split('|');
-    pool.push({ inf, tense, person: parseInt(p), w: 2 + e.rate * 3 });
+    pool.push({ inf, tense, person: parseInt(p), w: 2 + e.rate * 3, _key: e.key });
   });
   ALL_VERBS.forEach(inf => {
     ALL_TENSES.forEach(tense => {
-      for (let p = 0; p < 6; p++) pool.push({ inf, tense, person: p, w: 0.15 });
+      for (let p = 0; p < 6; p++) pool.push({ inf, tense, person: p, w: 0.15, _key: comboKey([inf, tense, p]) });
     });
   });
   return pool;

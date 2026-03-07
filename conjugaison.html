@@ -211,7 +211,7 @@ function startMode(mode, minutes) {
 
   session = {
     mode, minutes: minutes || 10, correct: 0, wrong: 0, streak: 0, coinsEarned: 0, score: 0,
-    errors: [], answered: false,
+    errors: [], answered: false, askedKeys: new Set(),
     evalQuestions: evalQs, evalIndex: 0,
     pool: mode === 'normal' ? buildNormalPool(gameData.stats) :
           mode === 'revision' ? buildRevisionPool(errors) : null,
@@ -255,7 +255,8 @@ function nextQuestion() {
     q = session.evalQuestions[session.evalIndex++];
     document.getElementById('eval-progress').textContent = `Question ${session.evalIndex} / ${session.evalQuestions.length}`;
   } else {
-    q = weightedPick(session.pool);
+    q = weightedPick(session.pool, session.askedKeys);
+    session.askedKeys.add(q._key);
     document.getElementById('eval-progress').textContent = '';
   }
   session.currentQ = q; session.answered = false;

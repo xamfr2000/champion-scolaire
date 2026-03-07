@@ -257,7 +257,7 @@ function buildGramNormalPool(stats) {
     let w = q.priority ? 1.4 : 0.7;
     if (s.asked === 0) w *= 0.8;
     else w *= (1 + rate * 2.5);
-    return { q, w };
+    return { q, w, _key: gramComboKey(q) };
   });
 }
 
@@ -265,7 +265,7 @@ function buildGramRevisionPool(errorCombos) {
   const qMap = {};
   ALL_GRAM_QS.forEach(q => qMap[gramComboKey(q)] = q);
   const pool = [];
-  errorCombos.forEach(e => { if (qMap[e.key]) pool.push({ q: qMap[e.key], w: 2 + e.rate * 3 }); });
-  ALL_GRAM_QS.forEach(q => pool.push({ q, w: 0.15 }));
+  errorCombos.forEach(e => { if (qMap[e.key]) pool.push({ q: qMap[e.key], w: 2 + e.rate * 3, _key: e.key }); });
+  ALL_GRAM_QS.forEach(q => pool.push({ q, w: 0.15, _key: gramComboKey(q) }));
   return pool;
 }

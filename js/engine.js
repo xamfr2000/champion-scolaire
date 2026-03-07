@@ -98,11 +98,15 @@ function shuffle(arr) {
   return a;
 }
 
-function weightedPick(pool) {
-  const total = pool.reduce((s, i) => s + i.w, 0);
+function weightedPick(pool, excludeSet) {
+  let filtered = excludeSet && excludeSet.size > 0
+    ? pool.filter(i => !excludeSet.has(i._key))
+    : pool;
+  if (filtered.length === 0) filtered = pool; // all asked → allow repeats
+  const total = filtered.reduce((s, i) => s + i.w, 0);
   let r = Math.random() * total;
-  for (const item of pool) { r -= item.w; if (r <= 0) return item; }
-  return pool[pool.length - 1];
+  for (const item of filtered) { r -= item.w; if (r <= 0) return item; }
+  return filtered[filtered.length - 1];
 }
 
 function showScreen(id) {
