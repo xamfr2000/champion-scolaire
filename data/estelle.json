@@ -2,5 +2,6 @@
   "conjugaison": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
   "grammaire": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
   "calcul": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
-  "orthographe": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} }
+  "orthographe": { "xp": 0, "sessions": 0, "totalQ": 0, "totalCorrect": 0, "bestPct": 0, "stats": {} },
+  "cat": { "hunger": 80, "happiness": 80, "cleanliness": 80, "energy": 80, "coins": 0, "lastUpdate": 1741348800000 }
 }
