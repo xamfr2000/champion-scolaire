@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orthographe — Champion Scolaire</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+
+<!-- ===== ACCUEIL ===== -->
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <h1>✏️ Orthographe</h1>
+    <p class="subtitle" id="home-subtitle">Deviens un champion de l'orthographe !</p>
+    <div class="level-badge">
+      <div class="level-icon" id="level-icon">🌱</div>
+      <div class="level-info">
+        <div class="level-name" id="level-name">Apprenti</div>
+        <div class="level-xp" id="level-xp">0 XP</div>
+        <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="value" id="stat-sessions">0</div><div class="label">Séances</div></div>
+      <div class="stat-card"><div class="value" id="stat-best">0%</div><div class="label">Meilleur score</div></div>
+      <div class="stat-card"><div class="value" id="stat-questions">0</div><div class="label">Questions</div></div>
+      <div class="stat-card"><div class="value" id="stat-global">0%</div><div class="label">Réussite</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="startMode('normal')">🚀 Séance normale (20 min)</button>
+    <div id="btn-revision-wrap" style="display:none">
+      <button class="btn btn-revision" onclick="startMode('revision')">🔄 Révision — erreurs passées (15 min)</button>
+    </div>
+    <div id="btn-eval-wrap" style="display:none">
+      <button class="btn btn-eval" onclick="startMode('evaluation')">🎯 Évaluation Finale — max 1 faute !</button>
+    </div>
+    <hr class="sep">
+    <button class="btn btn-secondary" onclick="showScreen('screen-stats')">📊 Mon historique</button>
+    <hr class="sep">
+    <button class="btn btn-secondary" onclick="showScreen('screen-sync')">🔄 Transférer ma progression</button>
+    <a href="index.html" class="btn btn-secondary" style="text-align:center;text-decoration:none">🏠 Retour au menu</a>
+  </div>
+</div>
+
+<!-- ===== SESSION ===== -->
+<div id="screen-session" class="screen">
+  <div class="card">
+    <div class="session-header">
+      <span class="mode-label" id="mode-label">🚀 Séance</span>
+      <div class="score-display">
+        <div>✅ <span id="sess-correct">0</span></div>
+        <div>❌ <span id="sess-wrong">0</span></div>
+        <div>⭐ <span id="sess-score">0</span></div>
+      </div>
+      <div id="timer-text">20:00</div>
+    </div>
+    <div class="timer-bar-container"><div id="timerBar"></div></div>
+    <div class="streak" id="streak-display"></div>
+    <div class="question-card">
+      <div class="type-badge" id="q-type">—</div>
+      <div class="question-instruction" id="q-instruction">—</div>
+      <div class="question-phrase" id="q-phrase">—</div>
+      <div class="eval-progress" id="eval-progress"></div>
+    </div>
+    <div id="choices-container" style="display:none">
+      <div class="choices-grid" id="choices-grid"></div>
+    </div>
+    <div id="text-container">
+      <input type="text" class="answer-input" id="answer-input" placeholder="Écris ta réponse ici..." onkeydown="if(event.key==='Enter') checkAnswer()" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <button class="btn btn-primary" id="submit-btn" onclick="checkAnswer()">✅ Valider</button>
+    </div>
+    <div class="feedback" id="feedback">
+      <div class="feedback-title" id="feedback-title"></div>
+      <div class="feedback-answer" id="feedback-answer"></div>
+      <div class="feedback-explanation" id="feedback-explanation"></div>
+    </div>
+    <button class="btn btn-secondary" id="next-btn" style="display:none" onclick="nextQuestion()">➡️ Question suivante</button>
+    <button class="btn btn-danger" id="end-btn" style="display:none" onclick="endSession()">🏁 Terminer</button>
+  </div>
+</div>
+
+<!-- ===== RÉSULTATS ===== -->
+<div id="screen-result" class="screen">
+  <div class="card">
+    <h2 style="text-align:center" id="result-title">🏆 Fin de la séance !</h2>
+    <div id="result-normal"><div class="result-score pop" id="result-pct">—</div></div>
+    <div id="result-eval" style="display:none"><div class="pop" id="eval-verdict">—</div></div>
+    <div class="result-stats">
+      <div class="result-stat"><div class="val" id="res-total">0</div><div class="lbl">Questions</div></div>
+      <div class="result-stat"><div class="val" id="res-correct">0</div><div class="lbl">Correctes ✅</div></div>
+      <div class="result-stat"><div class="val" id="res-wrong">0</div><div class="lbl">Erreurs ❌</div></div>
+    </div>
+    <div class="xp-gain" id="xp-gain" style="display:none"></div>
+    <div id="errors-section" style="display:none">
+      <div class="errors-section"><h3>❌ À retravailler :</h3><div id="errors-list"></div></div>
+    </div>
+    <button class="btn btn-primary" id="res-new-session" onclick="startMode('normal')">🔄 Nouvelle séance</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-home')">🏠 Accueil orthographe</button>
+  </div>
+</div>
+
+<!-- ===== HISTORIQUE ===== -->
+<div id="screen-stats" class="screen">
+  <div class="card">
+    <h2>📊 Mon historique</h2>
+    <h3>❌ Points faibles</h3><div id="stats-weak"><p class="empty-msg">Pas encore d'erreurs.</p></div>
+    <hr class="sep">
+    <h3>✅ Points forts</h3><div id="stats-strong"><p class="empty-msg">Joue pour voir tes progrès !</p></div>
+    <button class="btn btn-secondary" onclick="showScreen('screen-home')" style="margin-top:18px">← Retour</button>
+  </div>
+</div>
+
+<!-- ===== TRANSFERT ===== -->
+<div id="screen-sync" class="screen">
+  <div class="card">
+    <h2>🔄 Transférer</h2>
+    <h3>📤 Exporter</h3>
+    <textarea id="export-area" readonly rows="3" class="sync-textarea" style="background:#f8f9ff" onclick="this.select()"></textarea>
+    <button class="btn btn-primary" onclick="exportData()" style="margin-top:6px">📤 Générer le code</button>
+    <button class="btn btn-secondary" id="copy-btn" onclick="copyCode()" style="display:none">📋 Copier</button>
+    <hr class="sep">
+    <h3>📥 Importer</h3>
+    <textarea id="import-area" rows="3" class="sync-textarea" placeholder="Colle le code ici…"></textarea>
+    <button class="btn btn-eval" onclick="importData()">📥 Importer</button>
+    <div id="import-msg" style="margin-top:8px;text-align:center;font-weight:bold;font-size:0.92em"></div>
+    <hr class="sep">
+    <button class="btn btn-secondary" onclick="showScreen('screen-home')">← Retour</button>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/orthographe.js"></script>
+<script>
+const SUBJECT = 'orthographe';
+let gameData, session, timerInterval;
+
+// ================================================================
+// INIT
+// ================================================================
+(function init() {
+  const last = getLastProfile();
+  if (!last || !PROFILES.find(p => p.id === last)) { window.location.href = 'index.html'; return; }
+  setProfile(last);
+  gameData = loadSave(SUBJECT);
+  document.getElementById('home-subtitle').textContent =
+    `${currentProfile.avatar} ${currentProfile.name} — Deviens un champion de l'orthographe !`;
+  updateHomeUI();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+
+// ================================================================
+// ACCUEIL
+// ================================================================
+function updateHomeUI() {
+  const level = getLevel(gameData.xp);
+  const next  = LEVELS[LEVELS.indexOf(level) + 1];
+  document.getElementById('level-icon').textContent = level.icon;
+  document.getElementById('level-name').textContent = level.name;
+  if (next) {
+    document.getElementById('xp-fill').style.width  = ((gameData.xp - level.min) / (next.min - level.min) * 100) + '%';
+    document.getElementById('level-xp').textContent = `${gameData.xp} XP — prochain : ${next.min} XP`;
+  } else {
+    document.getElementById('xp-fill').style.width  = '100%';
+    document.getElementById('level-xp').textContent = `${gameData.xp} XP — MAX ! 🎉`;
+  }
+  document.getElementById('stat-sessions').textContent  = gameData.sessions;
+  document.getElementById('stat-best').textContent      = gameData.bestPct + '%';
+  document.getElementById('stat-questions').textContent = gameData.totalQ;
+  document.getElementById('stat-global').textContent    =
+    (gameData.totalQ > 0 ? Math.round(gameData.totalCorrect / gameData.totalQ * 100) : 0) + '%';
+  const errors = getErrorCombos(gameData.stats);
+  document.getElementById('btn-revision-wrap').style.display = errors.length > 0  ? '' : 'none';
+  document.getElementById('btn-eval-wrap').style.display     = errors.length >= 3 ? '' : 'none';
+}
+
+// ================================================================
+// MODES
+// ================================================================
+function startMode(mode) {
+  clearInterval(timerInterval);
+  const errors = getErrorCombos(gameData.stats);
+  if (mode === 'evaluation' && errors.length === 0) { alert("Pas encore d'erreurs !"); return; }
+
+  const evalQs = mode === 'evaluation' ? shuffle(errors).slice(0, 35).map(e => {
+    const qMap = {}; ALL_ORTHO_QS.forEach(q => qMap[orthoComboKey(q)] = q);
+    return qMap[e.key];
+  }).filter(Boolean) : null;
+
+  session = {
+    mode, correct: 0, wrong: 0, streak: 0, xpGained: 0, score: 0,
+    errors: [], answered: false,
+    evalQuestions: evalQs, evalIndex: 0,
+    pool: mode === 'normal' ? buildOrthoNormalPool(gameData.stats) :
+          mode === 'revision' ? buildOrthoRevisionPool(errors) : null,
+    timeLeft:  mode === 'evaluation' ? null : mode === 'revision' ? 15*60 : 20*60,
+    totalTime: mode === 'evaluation' ? null : mode === 'revision' ? 15*60 : 20*60
+  };
+
+  const labels  = { normal:'🚀 Séance', revision:'🔄 Révision', evaluation:'🎯 Évaluation' };
+  const classes = { normal:'mode-normal', revision:'mode-revision', evaluation:'mode-eval' };
+  const lbl = document.getElementById('mode-label');
+  lbl.textContent = labels[mode]; lbl.className = 'mode-label ' + classes[mode];
+  document.getElementById('timer-text').style.display = session.timeLeft != null ? '' : 'none';
+  document.getElementById('timerBar').parentElement.style.display = session.timeLeft != null ? '' : 'none';
+
+  showScreen('screen-session');
+  updateSessionUI();
+  nextQuestion();
+  if (session.timeLeft != null) startTimer();
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    session.timeLeft--;
+    const m = Math.floor(session.timeLeft / 60), s = session.timeLeft % 60;
+    document.getElementById('timer-text').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    const pct = (session.timeLeft / session.totalTime) * 100;
+    const bar = document.getElementById('timerBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct < 20 ? '#e74c3c' : pct < 40 ? 'linear-gradient(90deg,#f39c12,#e74c3c)' : 'linear-gradient(90deg,#6C63FF,#FF6B9D)';
+    if (session.timeLeft <= 0) { clearInterval(timerInterval); endSession(); }
+  }, 1000);
+}
+
+// ================================================================
+// QUESTIONS
+// ================================================================
+function nextQuestion() {
+  let q;
+  if (session.mode === 'evaluation') {
+    if (session.evalIndex >= session.evalQuestions.length) { endSession(); return; }
+    q = session.evalQuestions[session.evalIndex++];
+    document.getElementById('eval-progress').textContent = `Question ${session.evalIndex} / ${session.evalQuestions.length}`;
+  } else {
+    q = weightedPick(session.pool).q;
+    document.getElementById('eval-progress').textContent = '';
+  }
+  session.currentQ = q; session.answered = false;
+
+  const display = orthoQuestionDisplay(q);
+  document.getElementById('q-type').textContent = display.typeName;
+  document.getElementById('q-instruction').textContent = display.instruction;
+  document.getElementById('q-phrase').textContent = display.phrase;
+
+  const isChoice = ORTHO_MODE[q.type] === 'choice';
+  document.getElementById('choices-container').style.display = isChoice ? '' : 'none';
+  document.getElementById('text-container').style.display = isChoice ? 'none' : '';
+
+  if (isChoice) {
+    const choices = getOrthoChoices(q);
+    const grid = document.getElementById('choices-grid');
+    grid.innerHTML = choices.map(c =>
+      `<button class="choice-btn" onclick="selectChoice(this, '${c.replace(/'/g, "\\'")}')">${c}</button>`
+    ).join('');
+  } else {
+    const inp = document.getElementById('answer-input');
+    inp.value = ''; inp.className = 'answer-input'; inp.disabled = false; inp.focus();
+    document.getElementById('submit-btn').style.display = 'block';
+  }
+
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('end-btn').style.display = 'none';
+}
+
+function selectChoice(btn, value) {
+  if (session.answered) return;
+  session.answered = true;
+  const q = session.currentQ;
+  const correct = checkOrthoAnswer(q, value);
+  recordAnswer(gameData.stats, orthoComboKey(q), correct);
+
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    const n = s => (s||'').toLowerCase().trim();
+    if (n(b.textContent) === n(q.reponse)) b.classList.add('correct');
+  });
+  if (!correct) btn.classList.add('incorrect');
+
+  handleResult(correct, value, orthoDisplayAnswer(q), orthoExplanation(q));
+}
+
+function checkAnswer() {
+  if (session.answered) return;
+  session.answered = true;
+  const inp = document.getElementById('answer-input');
+  const q = session.currentQ;
+  const correct = checkOrthoAnswer(q, inp.value);
+  recordAnswer(gameData.stats, orthoComboKey(q), correct);
+  inp.className = 'answer-input ' + (correct ? 'correct' : 'incorrect');
+  inp.disabled = true;
+  document.getElementById('submit-btn').style.display = 'none';
+  handleResult(correct, inp.value, orthoDisplayAnswer(q), orthoExplanation(q));
+}
+
+function handleResult(correct, userAnswer, expected, explanation) {
+  const q = session.currentQ;
+  const fb = document.getElementById('feedback');
+  if (correct) {
+    session.correct++; session.streak++;
+    let xp = session.streak >= 5 ? 20 : session.streak >= 3 ? 15 : 10;
+    session.xpGained += xp; session.score += xp;
+    fb.className = 'feedback correct'; fb.style.display = 'block';
+    document.getElementById('feedback-title').textContent =
+      ['✅ Excellent !','✅ Bravo !','✅ Parfait !','✅ Super !'][Math.floor(Math.random()*4)] + ' +' + xp + ' XP';
+    document.getElementById('feedback-answer').textContent = '';
+    const st = document.getElementById('streak-display');
+    st.textContent = session.streak >= 5 ? `🔥🔥 Série de ${session.streak} !` : session.streak >= 3 ? `🔥 Série de ${session.streak} !` : '';
+  } else {
+    session.wrong++; session.streak = 0;
+    session.errors.push({ q, user: userAnswer, expected });
+    fb.className = 'feedback incorrect'; fb.style.display = 'block';
+    document.getElementById('feedback-title').textContent = '❌ Pas tout à fait...';
+    document.getElementById('feedback-answer').innerHTML = `La bonne réponse : <strong>${expected}</strong>`;
+    document.getElementById('streak-display').textContent = '';
+  }
+  document.getElementById('feedback-explanation').textContent = explanation;
+  document.getElementById('next-btn').style.display = 'block';
+  if (session.mode !== 'evaluation') document.getElementById('end-btn').style.display = 'block';
+  updateSessionUI();
+}
+
+function updateSessionUI() {
+  document.getElementById('sess-score').textContent   = session.score;
+  document.getElementById('sess-correct').textContent = session.correct;
+  document.getElementById('sess-wrong').textContent   = session.wrong;
+}
+
+// ================================================================
+// FIN
+// ================================================================
+function endSession() {
+  clearInterval(timerInterval);
+  const total = session.correct + session.wrong;
+  const pct = total > 0 ? Math.round(session.correct / total * 100) : 0;
+  gameData.xp += session.xpGained; gameData.sessions++; gameData.totalQ += total;
+  gameData.totalCorrect += session.correct;
+  if (pct > gameData.bestPct) gameData.bestPct = pct;
+  saveGame(SUBJECT, gameData);
+
+  document.getElementById('res-total').textContent   = total;
+  document.getElementById('res-correct').textContent = session.correct;
+  document.getElementById('res-wrong').textContent   = session.wrong;
+
+  const isEval = session.mode === 'evaluation';
+  document.getElementById('result-normal').style.display = isEval ? 'none' : 'block';
+  document.getElementById('result-eval').style.display   = isEval ? 'block' : 'none';
+  document.getElementById('result-title').textContent    = isEval ? '🎯 Évaluation Finale' : '🏆 Fin de la séance !';
+
+  if (isEval) {
+    const passed = session.wrong <= 1;
+    const v = document.getElementById('eval-verdict');
+    v.className = (passed ? 'result-eval-pass' : 'result-eval-fail') + ' pop';
+    v.innerHTML = passed
+      ? `✅ RÉUSSI !<br><small>${session.wrong} faute${session.wrong!==1?'s':''} sur ${session.evalQuestions.length}</small>`
+      : `💪 CONTINUE !<br><small>${session.wrong} faute${session.wrong>1?'s':''} — objectif : max 1</small>`;
+    document.getElementById('xp-gain').style.display = 'none';
+    document.getElementById('res-new-session').onclick = () => startMode('evaluation');
+    document.getElementById('res-new-session').textContent = '🎯 Retenter';
+  } else {
+    const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '💪';
+    document.getElementById('result-pct').textContent = emoji + ' ' + pct + '%';
+    const xpEl = document.getElementById('xp-gain');
+    xpEl.style.display = 'block'; xpEl.textContent = `+${session.xpGained} XP !`;
+    document.getElementById('res-new-session').onclick = () => startMode('normal');
+    document.getElementById('res-new-session').textContent = '🔄 Nouvelle séance';
+  }
+
+  const errSec = document.getElementById('errors-section');
+  if (session.errors.length > 0) {
+    errSec.style.display = 'block';
+    document.getElementById('errors-list').innerHTML = session.errors.slice(0,10).map(e => {
+      const d = orthoQuestionDisplay(e.q);
+      return `<div class="error-item"><strong>${d.typeName}</strong> — ${d.phrase.substring(0,50)}${d.phrase.length>50?'…':''} :
+      <span class="wrong-ans">${e.user||'(vide)'}</span> → <span class="right-ans">${e.expected}</span></div>`;
+    }).join('');
+  } else errSec.style.display = 'none';
+
+  showScreen('screen-result');
+  updateHomeUI();
+}
+
+// ================================================================
+// STATS
+// ================================================================
+function buildStatsScreen() {
+  const errors = getErrorCombos(gameData.stats);
+  const qMap = {}; ALL_ORTHO_QS.forEach(q => qMap[orthoComboKey(q)] = q);
+
+  const weakEl = document.getElementById('stats-weak');
+  if (errors.length === 0) { weakEl.innerHTML = '<p class="empty-msg">Pas encore d\'erreurs.</p>'; }
+  else { weakEl.innerHTML = errors.slice(0,10).map(e => {
+    const q = qMap[e.key];
+    const d = q ? orthoQuestionDisplay(q) : { typeName: '?', phrase: e.key };
+    return `<div class="weak-combo"><div><div class="combo-name">${d.typeName}</div><div class="combo-tense">${(d.phrase||'').substring(0,40)}</div></div><div class="combo-rate">${e.stat.wrong}/${e.stat.asked} (${Math.round(e.rate*100)}%)</div></div>`;
+  }).join(''); }
+
+  const all = Object.entries(gameData.stats).filter(([,s]) => s.asked >= 1).map(([key,s]) => ({ key, stat: s, rate: s.wrong/s.asked }));
+  const strong = all.filter(e => e.stat.wrong === 0 || (e.stat.asked >= 2 && e.rate < 0.25)).sort((a,b) => b.stat.asked - a.stat.asked).slice(0,10);
+  const strongEl = document.getElementById('stats-strong');
+  if (strong.length === 0) strongEl.innerHTML = '<p class="empty-msg">Joue pour voir tes progrès !</p>';
+  else strongEl.innerHTML = strong.map(e => {
+    const q = qMap[e.key];
+    const d = q ? orthoQuestionDisplay(q) : { typeName: '?', phrase: e.key };
+    const ok = e.stat.asked - e.stat.wrong;
+    return `<div class="weak-combo good-combo"><div><div class="combo-name">${d.typeName}</div><div class="combo-tense">${(d.phrase||'').substring(0,40)}</div></div><div class="combo-rate">${ok}/${e.stat.asked} ✅</div></div>`;
+  }).join('');
+}
+
+const _showScreen = showScreen;
+showScreen = function(id) { _showScreen(id); if (id === 'screen-stats') buildStatsScreen(); };
+
+// ================================================================
+// EXPORT / IMPORT
+// ================================================================
+function exportData() {
+  document.getElementById('export-area').value = doExport(SUBJECT, gameData);
+  document.getElementById('copy-btn').style.display = 'block';
+}
+function copyCode() {
+  const a = document.getElementById('export-area'); a.select(); a.setSelectionRange(0,99999);
+  navigator.clipboard.writeText(a.value).then(() => {
+    document.getElementById('copy-btn').textContent = '✅ Copié !';
+    setTimeout(() => document.getElementById('copy-btn').textContent = '📋 Copier', 2000);
+  }).catch(() => { document.execCommand('copy'); });
+}
+function importData() {
+  const msg = document.getElementById('import-msg');
+  const raw = document.getElementById('import-area').value.trim();
+  if (!raw) { msg.textContent = '❌ Colle un code !'; msg.style.color = '#e74c3c'; return; }
+  try {
+    const imported = doImport(raw);
+    if (gameData.totalQ > 0) {
+      if (confirm('Fusionner avec ta progression ? OK=Fusionner, Annuler=Remplacer')) {
+        gameData.xp += imported.data.xp; gameData.sessions += imported.data.sessions;
+        gameData.totalQ += imported.data.totalQ; gameData.totalCorrect += imported.data.totalCorrect;
+        gameData.bestPct = Math.max(gameData.bestPct, imported.data.bestPct);
+        Object.entries(imported.data.stats).forEach(([k,s]) => {
+          if (!gameData.stats[k]) gameData.stats[k] = {asked:0,wrong:0};
+          gameData.stats[k].asked += s.asked; gameData.stats[k].wrong += s.wrong;
+        });
+      } else gameData = imported.data;
+    } else gameData = imported.data;
+    saveGame(SUBJECT, gameData); updateHomeUI();
+    msg.textContent = '✅ Importé !'; msg.style.color = '#27ae60';
+  } catch(e) { msg.textContent = '❌ Code invalide.'; msg.style.color = '#e74c3c'; }
+}
+</script>
+</body>
+</html>

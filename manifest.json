@@ -1,0 +1,16 @@
+{
+  "name": "Champion Scolaire",
+  "short_name": "Champion",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#6C63FF",
+  "theme_color": "#6C63FF",
+  "description": "App de révisions scolaires pour Estelle et Zélie",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

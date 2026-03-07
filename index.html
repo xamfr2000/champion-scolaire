@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Champion Scolaire !</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Champion">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+</head>
+<body>
+
+<!-- ÉCRAN PIN -->
+<div id="screen-pin" class="screen active" style="width:100%;max-width:640px">
+  <div class="card" style="text-align:center">
+    <h1>🎯 Champion<br>Scolaire !</h1>
+    <p class="subtitle">Entre le code familial pour commencer</p>
+    <input type="password" id="pin-input" maxlength="6" placeholder="••••"
+      style="width:140px;padding:14px;font-size:1.6em;text-align:center;border:3px solid #e8eaff;border-radius:14px;outline:none;font-family:inherit;letter-spacing:8px"
+      onkeydown="if(event.key==='Enter') checkPin()">
+    <button class="btn btn-primary" onclick="checkPin()" style="max-width:200px;margin:12px auto 0">Entrer</button>
+    <div id="pin-error" style="color:#e74c3c;margin-top:8px;font-size:0.9em"></div>
+  </div>
+</div>
+
+<!-- ÉCRAN PRINCIPAL -->
+<div id="screen-main" class="screen" style="width:100%;max-width:640px">
+  <div class="card">
+    <h1>🎯 Champion<br>Scolaire !</h1>
+    <p class="subtitle">Choisis ton profil pour commencer</p>
+
+    <div class="profile-grid" id="profile-grid"></div>
+  </div>
+
+  <div class="card" id="subject-card" style="display:none">
+    <h2 id="welcome-msg">Salut !</h2>
+    <p class="subtitle">Choisis ta matière</p>
+
+    <div class="subject-grid">
+      <a href="conjugaison.html" class="subject-card">
+        <div class="subject-icon">📝</div>
+        <div class="subject-name">Conjugaison</div>
+        <div class="subject-desc">Verbes et temps</div>
+      </a>
+      <a href="grammaire.html" class="subject-card">
+        <div class="subject-icon">📖</div>
+        <div class="subject-name">Grammaire</div>
+        <div class="subject-desc">Nature, fonction, accords</div>
+      </a>
+      <a href="calcul.html" class="subject-card">
+        <div class="subject-icon">🔢</div>
+        <div class="subject-name">Calcul</div>
+        <div class="subject-desc">Mental, conversions, opérations</div>
+      </a>
+      <a href="orthographe.html" class="subject-card">
+        <div class="subject-icon">✏️</div>
+        <div class="subject-name">Orthographe</div>
+        <div class="subject-desc">Homophones, dictée, accords</div>
+      </a>
+    </div>
+
+    <hr class="sep">
+    <button class="btn btn-secondary" onclick="switchProfile()">🔄 Changer de profil</button>
+  </div>
+</div>
+</div>
+
+<script src="js/engine.js"></script>
+<script>
+  // Code familial — change-le ici si besoin
+  const FAMILY_PIN = '2025';
+
+  // Si déjà authentifié dans cette session, skip le PIN
+  if (sessionStorage.getItem('champion_auth') === 'ok') {
+    document.getElementById('screen-pin').classList.remove('active');
+    document.getElementById('screen-main').classList.add('active');
+  } else {
+    document.getElementById('pin-input').focus();
+  }
+
+  function checkPin() {
+    const pin = document.getElementById('pin-input').value;
+    if (pin === FAMILY_PIN) {
+      sessionStorage.setItem('champion_auth', 'ok');
+      document.getElementById('screen-pin').classList.remove('active');
+      document.getElementById('screen-main').classList.add('active');
+    } else {
+      document.getElementById('pin-error').textContent = 'Code incorrect !';
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-input').focus();
+    }
+  }
+
+  const grid = document.getElementById('profile-grid');
+
+  PROFILES.forEach(p => {
+    // Charger le XP total de toutes les matières
+    let totalXp = 0;
+    ['conjugaison','grammaire','calcul','orthographe'].forEach(s => {
+      try { var d = JSON.parse(localStorage.getItem(`champion_${p.id}_${s}`)); totalXp += (d && d.xp) || 0; } catch(e) {}
+    });
+    const level = getLevel(totalXp);
+
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.innerHTML = `
+      <div class="profile-avatar">${p.avatar}</div>
+      <div class="profile-name">${p.name}</div>
+      <div class="profile-level">${level.icon} ${level.name}</div>
+    `;
+    card.onclick = () => selectProfile(p.id);
+    grid.appendChild(card);
+  });
+
+  // Auto-select last used profile
+  const last = getLastProfile();
+  if (last && PROFILES.find(p => p.id === last)) {
+    selectProfile(last);
+  }
+
+  function selectProfile(id) {
+    setProfile(id);
+    document.getElementById('welcome-msg').textContent =
+      `Salut ${currentProfile.name} ${currentProfile.avatar} !`;
+    document.getElementById('subject-card').style.display = '';
+    document.getElementById('profile-grid').parentElement.querySelectorAll('.profile-card').forEach(c => {
+      c.style.borderColor = '#e8eaff';
+    });
+    // Highlight selected
+    const idx = PROFILES.findIndex(p => p.id === id);
+    grid.children[idx].style.borderColor = '#6C63FF';
+  }
+
+  function switchProfile() {
+    document.getElementById('subject-card').style.display = 'none';
+    document.querySelectorAll('.profile-card').forEach(c => c.style.borderColor = '#e8eaff');
+  }
+</script>
+</body>
+</html>
