@@ -61,7 +61,7 @@ function newSave() {
 
 function saveGame(subject, data) {
   localStorage.setItem(getProfileKey(subject), JSON.stringify(data));
-  syncToGitHub().catch(() => {});
+  syncToCloud().catch(function() {});
 }
 
 // ================================================================
@@ -264,87 +264,59 @@ function getCatSVG() {
 }
 
 // ================================================================
-// SYNCHRONISATION GITHUB
+// SYNCHRONISATION FIREBASE
 // ================================================================
-const GITHUB_REPO = 'xamfr2000/champion-scolaire';
-const GITHUB_DATA_PATH = 'data';
-const ALL_SUBJECTS = ['conjugaison', 'grammaire', 'calcul', 'orthographe'];
+var FIREBASE_URL = 'https://champion-scolaire-837f7-default-rtdb.europe-west1.firebasedatabase.app';
+var ALL_SUBJECTS = ['conjugaison', 'grammaire', 'calcul', 'orthographe'];
 
-function getGitHubToken() { return localStorage.getItem('champion_github_token'); }
-function setGitHubToken(token) { localStorage.setItem('champion_github_token', token); }
-function removeGitHubToken() { localStorage.removeItem('champion_github_token'); }
-
-async function syncToGitHub() {
-  const token = getGitHubToken();
-  if (!token || !currentProfile) return false;
-
-  const data = {};
-  ALL_SUBJECTS.forEach(s => {
+async function syncToCloud() {
+  if (!currentProfile) return false;
+  var data = {};
+  ALL_SUBJECTS.forEach(function(s) {
     var key = 'champion_' + currentProfile.id + '_' + s;
     try { data[s] = JSON.parse(localStorage.getItem(key)) || newSave(); } catch(e) { data[s] = newSave(); }
   });
   try { data.cat = JSON.parse(localStorage.getItem('champion_' + currentProfile.id + '_cat')) || newCat(); } catch(e) { data.cat = newCat(); }
-
-  var path = GITHUB_DATA_PATH + '/' + currentProfile.id + '.json';
-  var url = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + path;
+  data.lastSync = new Date().toISOString();
 
   try {
-    let sha = null;
-    const getRes = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } });
-    if (getRes.ok) {
-      sha = (await getRes.json()).sha;
-    }
-
-    const body = {
-      message: 'Sync ' + currentProfile.name + ' - ' + new Date().toLocaleDateString('fr-FR'),
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
-    };
-    if (sha) body.sha = sha;
-
-    const putRes = await fetch(url, {
+    var res = await fetch(FIREBASE_URL + '/champions/' + currentProfile.id + '.json', {
       method: 'PUT',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-
-    if (putRes.ok) {
+    if (res.ok) {
       localStorage.setItem('champion_lastSync', new Date().toISOString());
       updateSyncStatus(true);
       return true;
     }
-    window._lastSyncError = 'HTTP ' + putRes.status + ': ' + (await putRes.text()).substring(0, 200);
+    window._lastSyncError = 'HTTP ' + res.status;
   } catch(e) {
     window._lastSyncError = e.message || String(e);
-    console.warn('Sync GitHub échoué:', e);
+    console.warn('Sync cloud échoué:', e);
   }
   return false;
 }
 
-async function loadFromGitHub(profileId) {
-  const token = getGitHubToken();
-  var path = GITHUB_DATA_PATH + '/' + profileId + '.json';
-  var url = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + path;
-
+async function loadFromCloud(profileId) {
   try {
-    const headers = token ? { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' } : {};
-    const res = await fetch(url, { headers });
+    var res = await fetch(FIREBASE_URL + '/champions/' + profileId + '.json');
     if (!res.ok) return false;
+    var remoteData = await res.json();
+    if (!remoteData) return false;
 
-    const fileData = await res.json();
-    const content = decodeURIComponent(escape(atob(fileData.content.replace(/\s/g, ''))));
-    const remoteData = JSON.parse(content);
-
-    ALL_SUBJECTS.forEach(s => {
+    ALL_SUBJECTS.forEach(function(s) {
       var key = 'champion_' + profileId + '_' + s;
-      let local;
+      var local;
       try { local = JSON.parse(localStorage.getItem(key)); } catch(e) {}
-      const remote = remoteData[s];
+      var remote = remoteData[s];
 
       if (!remote) return;
       if (!local || (remote.totalQ || 0) > (local.totalQ || 0)) {
         localStorage.setItem(key, JSON.stringify(remote));
       } else if (local && remote) {
-        Object.entries(remote.stats || {}).forEach(([k, rs]) => {
+        Object.keys(remote.stats || {}).forEach(function(k) {
+          var rs = remote.stats[k];
           if (!local.stats[k]) {
             local.stats[k] = rs;
           } else if (rs.asked > local.stats[k].asked) {
@@ -358,7 +330,7 @@ async function loadFromGitHub(profileId) {
     // Fusionner le chat
     if (remoteData.cat) {
       var catKey = 'champion_' + profileId + '_cat';
-      let localCat;
+      var localCat;
       try { localCat = JSON.parse(localStorage.getItem(catKey)); } catch(e) {}
       if (!localCat || (remoteData.cat.coins || 0) > (localCat.coins || 0)) {
         localStorage.setItem(catKey, JSON.stringify(remoteData.cat));
@@ -369,7 +341,7 @@ async function loadFromGitHub(profileId) {
     return true;
   } catch(e) {
     window._lastSyncError = 'load: ' + (e.message || String(e));
-    console.warn('Chargement GitHub échoué:', e);
+    console.warn('Chargement cloud échoué:', e);
   }
   return false;
 }

@@ -83,24 +83,12 @@
   <div class="card">
     <h2>⚙️ Synchronisation Cloud</h2>
     <p style="color:#888;font-size:0.9em;margin-bottom:14px">
-      Sauvegarde automatique de la progression sur GitHub.<br>
-      Les données sont synchronisées entre tous les appareils.
+      La progression est synchronisée automatiquement entre tous les appareils.
     </p>
 
     <div id="sync-config-status" style="text-align:center;padding:12px;border-radius:12px;margin-bottom:14px"></div>
 
-    <h3>🔑 Token GitHub</h3>
-    <p style="color:#888;font-size:0.82em;margin-bottom:8px">
-      Crée un token sur GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.<br>
-      Permissions : <strong>Contents</strong> (Read and Write) sur le dépôt <strong>champion-scolaire</strong>.
-    </p>
-    <input type="password" id="token-input" placeholder="github_pat_..."
-      style="width:100%;padding:12px;border:2px solid #e8eaff;border-radius:12px;font-size:0.95em;font-family:monospace;outline:none;margin-bottom:8px">
-    <button class="btn btn-primary" onclick="saveToken()">💾 Enregistrer le token</button>
-    <button class="btn btn-danger" id="btn-remove-token" onclick="removeToken()" style="display:none">🗑️ Supprimer le token</button>
-
-    <hr class="sep">
-    <h3>🔄 Synchronisation manuelle</h3>
+    <h3>🔄 Synchronisation</h3>
     <button class="btn btn-eval" onclick="manualSync()">☁️ Synchroniser maintenant</button>
     <div id="manual-sync-msg" style="margin-top:8px;text-align:center;font-weight:bold;font-size:0.92em"></div>
 
@@ -171,17 +159,13 @@
     let cat = loadCat(id);
     renderCat(cat);
 
-    if (getGitHubToken()) {
-      updateSyncStatus(false);
-      const ok = await loadFromGitHub(id);
-      updateSyncStatus(ok);
-      if (ok) {
-        cat = loadCat(id);
-        renderCat(cat);
-        refreshProfileCards();
-      }
-    } else {
-      updateSyncStatus(false);
+    updateSyncStatus(false);
+    var ok = await loadFromCloud(id);
+    updateSyncStatus(ok);
+    if (ok) {
+      cat = loadCat(id);
+      renderCat(cat);
+      refreshProfileCards();
     }
   }
 
@@ -221,7 +205,7 @@
       document.getElementById('cat-action-feedback').textContent = action.msg;
       renderCat(cat);
       refreshProfileCards();
-      syncToGitHub().catch(() => {});
+      syncToCloud().catch(function() {});
       setTimeout(() => {
         document.getElementById('cat-action-feedback').textContent = '';
       }, 2000);
@@ -244,73 +228,50 @@
 
   // ===== Paramètres de sync =====
   function updateSettingsUI() {
-    const token = getGitHubToken();
-    const statusEl = document.getElementById('sync-config-status');
-    const removeBtn = document.getElementById('btn-remove-token');
-    if (token) {
-      const last = localStorage.getItem('champion_lastSync');
-      const timeStr = last ? new Date(last).toLocaleString('fr-FR') : 'jamais';
-      statusEl.innerHTML = `<strong style="color:#27ae60">✅ Token configuré</strong><br><span style="font-size:0.85em;color:#888">Dernière synchro : ${timeStr}</span>`;
+    var statusEl = document.getElementById('sync-config-status');
+    var last = localStorage.getItem('champion_lastSync');
+    if (last) {
+      var timeStr = new Date(last).toLocaleString('fr-FR');
+      statusEl.innerHTML = '<strong style="color:#27ae60">Derniere synchro : ' + timeStr + '</strong>';
       statusEl.style.background = '#f0fff6';
-      removeBtn.style.display = '';
     } else {
-      statusEl.innerHTML = '<strong style="color:#e67e22">⚠️ Pas de token — progression locale uniquement</strong>';
-      statusEl.style.background = '#fff8f0';
-      removeBtn.style.display = 'none';
-    }
-  }
-
-  function saveToken() {
-    const token = document.getElementById('token-input').value.trim();
-    if (!token) return;
-    setGitHubToken(token);
-    document.getElementById('token-input').value = '';
-    updateSettingsUI();
-    manualSync();
-  }
-
-  function removeToken() {
-    if (confirm('Supprimer le token ? La progression restera en local.')) {
-      removeGitHubToken();
-      updateSettingsUI();
-      updateSyncStatus(false);
+      statusEl.innerHTML = '<strong style="color:#888">Pas encore synchronise</strong>';
+      statusEl.style.background = '#f8f9ff';
     }
   }
 
   async function manualSync() {
-    const msg = document.getElementById('manual-sync-msg');
-    const token = getGitHubToken();
-    if (!token) { msg.textContent = '❌ Configure un token d\'abord !'; msg.style.color = '#e74c3c'; return; }
+    var msg = document.getElementById('manual-sync-msg');
+    msg.textContent = 'Synchronisation en cours...'; msg.style.color = '#6C63FF';
 
-    msg.textContent = '⏳ Synchronisation en cours...'; msg.style.color = '#6C63FF';
-
-    let ok = true;
-    for (const p of PROFILES) {
+    var ok = true;
+    for (var i = 0; i < PROFILES.length; i++) {
+      var p = PROFILES[i];
       setProfile(p.id);
-      const loaded = await loadFromGitHub(p.id);
-      if (!loaded) { ok = false; continue; }
-      await syncToGitHub();
+      var loaded = await loadFromCloud(p.id);
+      await syncToCloud();
+      if (!loaded) ok = false;
     }
 
-    const lastId = getLastProfile();
+    var lastId = getLastProfile();
     if (lastId) setProfile(lastId);
 
     if (ok) {
-      msg.textContent = '✅ Synchronisation réussie !'; msg.style.color = '#27ae60';
-      refreshProfileCards();
-      updateSettingsUI();
-      updateSyncStatus(true);
-      const cat = loadCat();
-      renderCat(cat);
+      msg.textContent = 'Synchronisation reussie !'; msg.style.color = '#27ae60';
     } else {
-      msg.textContent = '❌ Erreur — vérifie le token et la connexion.' + (window._lastSyncError ? ' (' + window._lastSyncError + ')' : ''); msg.style.color = '#e74c3c';
+      msg.textContent = 'Premiere synchro effectuee !'; msg.style.color = '#27ae60';
     }
+    refreshProfileCards();
+    updateSettingsUI();
+    updateSyncStatus(true);
+    var cat = loadCat();
+    renderCat(cat);
   }
 
-  const _origShowScreen = showScreen;
+  var _origShowScreen = showScreen;
   showScreen = function(id) { _origShowScreen(id); if (id === 'screen-settings') updateSettingsUI(); };
 
-  updateSyncStatus(!!getGitHubToken() && !!localStorage.getItem('champion_lastSync'));
+  updateSyncStatus(!!localStorage.getItem('champion_lastSync'));
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function() {});
 </script>
