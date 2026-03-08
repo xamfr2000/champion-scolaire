@@ -88,7 +88,7 @@ const DICTEE_QS = [
   { definition:"Siège long et étroit, souvent en bois, sans dossier", reponse:"banc", priority:false },
   { definition:"Maison individuelle avec jardin en banlieue", reponse:"pavillon", priority:false },
   // Mots supplémentaires CM2
-  { definition:"Qui dure très longtemps, presque éternel", reponse:"éternel", priority:false },
+  { definition:"Qui dure très longtemps, qui semble ne jamais finir", reponse:"éternel", priority:false },
   { definition:"Vaste étendue d'eau salée qui couvre la Terre", reponse:"océan", priority:false },
   { definition:"Instrument qui sert à mesurer la température", reponse:"thermomètre", priority:false },
   { definition:"Science qui étudie les astres et l'univers", reponse:"astronomie", priority:false },
