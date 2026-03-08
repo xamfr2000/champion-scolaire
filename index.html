@@ -13,21 +13,8 @@
 </head>
 <body>
 
-<!-- ÉCRAN PIN -->
-<div id="screen-pin" class="screen active" style="width:100%;max-width:640px">
-  <div class="card" style="text-align:center">
-    <h1>🐱 Champion<br>Scolaire !</h1>
-    <p class="subtitle">Entre le code familial pour commencer</p>
-    <input type="password" id="pin-input" maxlength="6" placeholder="••••"
-      style="width:140px;padding:14px;font-size:1.6em;text-align:center;border:3px solid #e8eaff;border-radius:14px;outline:none;font-family:inherit;letter-spacing:8px"
-      onkeydown="if(event.key==='Enter') checkPin()">
-    <button class="btn btn-primary" onclick="checkPin()" style="max-width:200px;margin:12px auto 0">Entrer</button>
-    <div id="pin-error" style="color:#e74c3c;margin-top:8px;font-size:0.9em"></div>
-  </div>
-</div>
-
 <!-- ÉCRAN PRINCIPAL -->
-<div id="screen-main" class="screen" style="width:100%;max-width:640px">
+<div id="screen-main" class="screen active" style="width:100%;max-width:640px">
   <div class="card">
     <h1>🐱 Champion<br>Scolaire !</h1>
     <p class="subtitle">Choisis ton profil pour commencer</p>
@@ -101,28 +88,6 @@
 
 <script src="js/engine.js"></script>
 <script>
-  const FAMILY_PIN = '2025';
-
-  if (sessionStorage.getItem('champion_auth') === 'ok') {
-    document.getElementById('screen-pin').classList.remove('active');
-    document.getElementById('screen-main').classList.add('active');
-  } else {
-    document.getElementById('pin-input').focus();
-  }
-
-  function checkPin() {
-    const pin = document.getElementById('pin-input').value;
-    if (pin === FAMILY_PIN) {
-      sessionStorage.setItem('champion_auth', 'ok');
-      document.getElementById('screen-pin').classList.remove('active');
-      document.getElementById('screen-main').classList.add('active');
-    } else {
-      document.getElementById('pin-error').textContent = 'Code incorrect !';
-      document.getElementById('pin-input').value = '';
-      document.getElementById('pin-input').focus();
-    }
-  }
-
   const grid = document.getElementById('profile-grid');
 
   PROFILES.forEach(p => {

@@ -297,21 +297,62 @@ var ALL_SUBJECTS = ['conjugaison', 'grammaire', 'calcul', 'orthographe'];
 
 async function syncToCloud() {
   if (!currentProfile) return false;
-  var data = {};
-  ALL_SUBJECTS.forEach(function(s) {
-    var key = 'champion_' + currentProfile.id + '_' + s;
-    try { data[s] = JSON.parse(localStorage.getItem(key)) || newSave(); } catch(e) { data[s] = newSave(); }
-  });
-  try { data.cat = JSON.parse(localStorage.getItem('champion_' + currentProfile.id + '_cat')) || newCat(); } catch(e) { data.cat = newCat(); }
-  data.lastSync = new Date().toISOString();
 
   try {
+    // 1. Load remote data first
+    var getRes = await fetch(FIREBASE_URL + '/champions/' + currentProfile.id + '.json');
+    var remoteData = getRes.ok ? (await getRes.json()) || {} : {};
+
+    // 2. Build merged data: keep the best of local vs remote
+    var data = {};
+    ALL_SUBJECTS.forEach(function(s) {
+      var key = 'champion_' + currentProfile.id + '_' + s;
+      var local;
+      try { local = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+      if (!local) local = newSave();
+      var remote = remoteData[s];
+
+      // Keep whichever has more questions answered
+      if (!remote || (local.totalQ || 0) >= (remote.totalQ || 0)) {
+        data[s] = local;
+      } else {
+        data[s] = remote;
+      }
+      // Merge stats: keep best per combo
+      if (remote && remote.stats && local.stats) {
+        Object.keys(remote.stats).forEach(function(k) {
+          if (!data[s].stats[k] || remote.stats[k].asked > data[s].stats[k].asked) {
+            data[s].stats[k] = remote.stats[k];
+          }
+        });
+      }
+    });
+
+    // Merge cat: keep highest coins
+    var localCat;
+    try { localCat = JSON.parse(localStorage.getItem('champion_' + currentProfile.id + '_cat')); } catch(e) {}
+    if (!localCat) localCat = newCat();
+    var remoteCat = remoteData.cat || {};
+    data.cat = (localCat.coins || 0) >= (remoteCat.coins || 0) ? localCat : remoteCat;
+    // Keep friend status from either
+    if (remoteCat.friendUntil && (!data.cat.friendUntil || remoteCat.friendUntil > data.cat.friendUntil)) {
+      data.cat.friendUntil = remoteCat.friendUntil;
+    }
+
+    data.lastSync = new Date().toISOString();
+
+    // 3. Write merged data
     var res = await fetch(FIREBASE_URL + '/champions/' + currentProfile.id + '.json', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     if (res.ok) {
+      // Also update localStorage with merged data
+      ALL_SUBJECTS.forEach(function(s) {
+        localStorage.setItem('champion_' + currentProfile.id + '_' + s, JSON.stringify(data[s]));
+      });
+      localStorage.setItem('champion_' + currentProfile.id + '_cat', JSON.stringify(data.cat));
       localStorage.setItem('champion_lastSync', new Date().toISOString());
       updateSyncStatus(true);
       return true;
