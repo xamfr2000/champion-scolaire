@@ -328,12 +328,12 @@ async function syncToCloud() {
       }
     });
 
-    // Merge cat: keep highest coins
+    // Merge cat: keep most recently updated
     var localCat;
     try { localCat = JSON.parse(localStorage.getItem('champion_' + currentProfile.id + '_cat')); } catch(e) {}
     if (!localCat) localCat = newCat();
     var remoteCat = remoteData.cat || {};
-    data.cat = (localCat.coins || 0) >= (remoteCat.coins || 0) ? localCat : remoteCat;
+    data.cat = (localCat.lastUpdate || 0) >= (remoteCat.lastUpdate || 0) ? localCat : remoteCat;
     // Keep friend status from either
     if (remoteCat.friendUntil && (!data.cat.friendUntil || remoteCat.friendUntil > data.cat.friendUntil)) {
       data.cat.friendUntil = remoteCat.friendUntil;
@@ -399,7 +399,7 @@ async function loadFromCloud(profileId) {
       var catKey = 'champion_' + profileId + '_cat';
       var localCat;
       try { localCat = JSON.parse(localStorage.getItem(catKey)); } catch(e) {}
-      if (!localCat || (remoteData.cat.coins || 0) > (localCat.coins || 0)) {
+      if (!localCat || (remoteData.cat.lastUpdate || 0) > (localCat.lastUpdate || 0)) {
         localStorage.setItem(catKey, JSON.stringify(remoteData.cat));
       }
     }
