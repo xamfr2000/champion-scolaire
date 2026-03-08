@@ -47,7 +47,7 @@ const HOMOPHONE_QS = [
   { phrase:"___ matin, il fait froid.", options:["Ce","Se"], reponse:"Ce", regle:"Ce = déterminant démonstratif", priority:false },
   { phrase:"Elle ___ promène dans le parc.", options:["ce","se"], reponse:"se", regle:"se = pronom réfléchi", priority:false },
   // ces / ses
-  { phrase:"___ chaussures sont à Pierre.", options:["Ces","Ses"], reponse:"Ses", regle:"Ses = possessif (les siennes) — on peut dire « les chaussures de Pierre »", priority:true },
+  { phrase:"___ chaussures sont à Pierre.", options:["Ces","Ses"], reponse:"Ces", regle:"Ces = démonstratif — on montre les chaussures et on dit à qui elles appartiennent", priority:true },
   { phrase:"Regarde ___ fleurs magnifiques !", options:["ces","ses"], reponse:"ces", regle:"Ces = démonstratif (celles-ci) — on montre, on désigne", priority:true },
   { phrase:"Elle a perdu ___ clés.", options:["ces","ses"], reponse:"ses", regle:"Ses = possessif (les siennes)", priority:false },
   { phrase:"___ nuages annoncent la pluie.", options:["Ces","Ses"], reponse:"Ces", regle:"Ces = démonstratif (on désigne ces nuages-là)", priority:false },
