@@ -450,3 +450,9 @@ h3 { font-size: 1.05em; color: #555; margin: 16px 0 8px; }
   pointer-events: none;
   animation: floatUp 1s ease-out forwards;
 }
+
+/* Pulse animation for hearts */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}

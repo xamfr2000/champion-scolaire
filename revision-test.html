@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Multi-Matières — Champion Scolaire</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+
+<!-- ===== ACCUEIL ===== -->
+<div id="screen-home" class="screen active">
+  <div class="card">
+    <h1>🏆 Test Multi-Matières</h1>
+    <p class="subtitle">Revois tes erreurs de toutes les matières et gagne un ami pour ton chat !</p>
+
+    <div class="coin-badge" id="coin-badge">
+      <span class="coin-icon">💰</span>
+      <span class="coin-count" id="coin-count">0</span>
+      <span class="coin-label">pièces</span>
+    </div>
+
+    <div id="errors-summary" style="margin:16px 0"></div>
+
+    <div id="no-errors-msg" style="display:none;text-align:center;color:#888;padding:20px">
+      <p style="font-size:1.3em">✅ Aucune erreur à réviser !</p>
+      <p>Continue à faire des quiz pour débloquer ce test.</p>
+    </div>
+
+    <div id="start-section">
+      <h3>Comment ça marche ?</h3>
+      <ol style="color:#555;font-size:0.9em;margin-bottom:16px;padding-left:20px">
+        <li><strong>5 minutes de révision</strong> — relis toutes tes erreurs passées</li>
+        <li><strong>20 questions</strong> parmi ces erreurs, sans limite de temps</li>
+        <li><strong>1 erreur maximum</strong> pour gagner !</li>
+        <li><strong>Récompense :</strong> un ami pour ton chat pendant 3 jours 💕</li>
+      </ol>
+      <button class="btn btn-eval" id="btn-start" onclick="startRevision()">📖 Commencer la révision</button>
+    </div>
+
+    <hr class="sep">
+    <a href="index.html" class="btn btn-secondary" style="text-decoration:none;text-align:center">🏠 Retour</a>
+  </div>
+</div>
+
+<!-- ===== PHASE 1 : REVISION ===== -->
+<div id="screen-revision" class="screen">
+  <div class="card">
+    <h2>📖 Phase de révision</h2>
+    <p class="subtitle">Relis bien tes erreurs. Le test commence dans :</p>
+    <div id="revision-timer" style="font-size:2.5em;font-weight:900;color:#6C63FF;text-align:center;margin:16px 0">5:00</div>
+    <div class="timer-bar-container"><div id="timerBar" style="width:100%;height:100%;background:linear-gradient(90deg,#6C63FF,#48C774);border-radius:8px;transition:width 1s linear"></div></div>
+
+    <div id="revision-list" style="margin-top:20px;max-height:60vh;overflow-y:auto"></div>
+
+    <button class="btn btn-primary" onclick="startTest()" style="margin-top:16px">⏭️ Passer au test maintenant</button>
+  </div>
+</div>
+
+<!-- ===== PHASE 2 : TEST ===== -->
+<div id="screen-test" class="screen">
+  <div class="card">
+    <div class="session-header">
+      <span class="mode-label">🏆 Test</span>
+      <div class="score-display">
+        <div>✅ <span id="sess-correct">0</span></div>
+        <div>❌ <span id="sess-wrong">0</span></div>
+      </div>
+    </div>
+
+    <div class="eval-progress" id="test-progress">Question 1 / 20</div>
+
+    <div class="question-card" id="question-card">
+      <div class="type-badge" id="q-subject"></div>
+      <div class="question-instruction" id="q-instruction"></div>
+      <div class="question-phrase" id="q-phrase"></div>
+    </div>
+
+    <div id="choices-container" style="display:none">
+      <div class="choices-grid" id="choices-grid"></div>
+    </div>
+
+    <div id="text-container">
+      <input type="text" class="answer-input" id="answer-input" placeholder="Ta réponse..."
+        autocomplete="off" autocapitalize="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter' && !testSession.answered) checkTestAnswer()">
+      <button class="btn btn-primary" id="submit-btn" onclick="checkTestAnswer()">✅ Valider</button>
+    </div>
+
+    <div class="feedback" id="feedback" style="display:none">
+      <div class="feedback-title" id="feedback-title"></div>
+      <div class="feedback-answer" id="feedback-answer"></div>
+    </div>
+
+    <button class="btn btn-secondary" id="next-btn" style="display:none" onclick="nextTestQuestion()">➡️ Question suivante</button>
+  </div>
+</div>
+
+<!-- ===== RÉSULTAT ===== -->
+<div id="screen-result" class="screen">
+  <div class="card" style="text-align:center">
+    <div id="result-win" style="display:none">
+      <div class="result-score pop" style="font-size:3em">🏆</div>
+      <h2>Bravo, tu as réussi !</h2>
+      <p style="color:#6C63FF;font-weight:700;font-size:1.1em">Ton chat a un nouvel ami pendant 3 jours !</p>
+      <div id="friend-preview" style="display:flex;align-items:center;justify-content:center;gap:10px;margin:20px 0">
+      </div>
+    </div>
+    <div id="result-lose" style="display:none">
+      <div class="result-score pop" style="font-size:2.5em">💪</div>
+      <h2>Pas encore cette fois...</h2>
+      <p style="color:#888">Il faut maximum 1 erreur pour gagner. Révise encore et retente !</p>
+    </div>
+
+    <div class="result-stats" id="result-stats"></div>
+
+    <div id="result-errors" style="display:none;margin-top:16px;text-align:left">
+      <h3>❌ Erreurs :</h3>
+      <div id="result-errors-list"></div>
+    </div>
+
+    <a href="index.html" class="btn btn-eval" style="text-decoration:none;margin-top:16px">🐱 Voir mon chat !</a>
+    <button class="btn btn-primary" onclick="location.reload()" style="margin-top:8px">🔄 Retenter</button>
+    <a href="index.html" class="btn btn-secondary" style="text-decoration:none;margin-top:8px">🏠 Accueil</a>
+  </div>
+</div>
+
+<script src="js/engine.js"></script>
+<script src="js/grammaire.js"></script>
+<script src="js/orthographe.js"></script>
+<script src="js/conjugaison.js"></script>
+<script src="js/calcul.js"></script>
+<script>
+  // ===== INIT =====
+  var profileId = getLastProfile();
+  if (!profileId) { location.href = 'index.html'; }
+  setProfile(profileId);
+
+  var cat = loadCat();
+  document.getElementById('coin-count').textContent = cat.coins || 0;
+
+  // ===== GATHER ERRORS FROM ALL SUBJECTS =====
+  var allErrors = []; // {subject, key, question, displayQ, answer, choices, checkFn, stat}
+
+  function gatherErrors() {
+    allErrors = [];
+
+    // Grammaire errors
+    var gramData = loadSave('grammaire');
+    var gramErrors = getErrorCombos(gramData.stats);
+    var gramMap = {};
+    ALL_GRAM_QS.forEach(function(q) { gramMap[gramComboKey(q)] = q; });
+    gramErrors.forEach(function(e) {
+      var q = gramMap[e.key];
+      if (!q) return;
+      var d = gramQuestionDisplay(q);
+      var choices = (q.type === 'nature' || q.type === 'fonction') ? getGramChoices(q.type) : [];
+      allErrors.push({
+        subject: 'grammaire', subjectIcon: '📖', key: e.key, rate: e.rate, q: q,
+        instruction: d.instruction,
+        phrase: d.phrase + (d.highlight ? ' → ' + d.highlight : ''),
+        answer: gramGetAnswer(q),
+        choices: choices,
+        check: function(input) { return checkGramAnswer(q, input); }
+      });
+    });
+
+    // Orthographe errors
+    var orthoData = loadSave('orthographe');
+    var orthoErrors = getErrorCombos(orthoData.stats);
+    var orthoMap = {};
+    ALL_ORTHO_QS.forEach(function(q) { orthoMap[orthoComboKey(q)] = q; });
+    orthoErrors.forEach(function(e) {
+      var q = orthoMap[e.key];
+      if (!q) return;
+      var d = orthoQuestionDisplay(q);
+      var choices = getOrthoChoices(q);
+      allErrors.push({
+        subject: 'orthographe', subjectIcon: '✏️', key: e.key, rate: e.rate, q: q,
+        instruction: d.instruction,
+        phrase: d.phrase,
+        answer: orthoDisplayAnswer(q),
+        choices: choices,
+        check: function(input) { return checkOrthoAnswer(q, input); }
+      });
+    });
+
+    // Conjugaison errors
+    var conjData = loadSave('conjugaison');
+    var conjErrors = getErrorCombos(conjData.stats);
+    conjErrors.forEach(function(e) {
+      var parts = e.key.split('|');
+      var inf = parts[0], tense = parts[1], person = parseInt(parts[2]);
+      if (!V[inf]) return;
+      var pronouns = ['je','tu','il/elle','nous','vous','ils/elles'];
+      var tenseData = TEMPS[tense];
+      if (!tenseData) return;
+      allErrors.push({
+        subject: 'conjugaison', subjectIcon: '📝', key: e.key, rate: e.rate, q: {inf:inf,tense:tense,person:person},
+        instruction: 'Conjugue le verbe ' + inf.toUpperCase() + ' au ' + tenseData.nom + ' :',
+        phrase: pronouns[person] + ' ...',
+        answer: getDisplayConj(inf, tense, person),
+        choices: [],
+        check: function(input) { return checkConjCorrect(input, inf, tense, person); }
+      });
+    });
+
+    // Calcul errors (conversions only - static questions)
+    var calcData = loadSave('calcul');
+    var calcErrors = getErrorCombos(calcData.stats);
+    calcErrors.forEach(function(e) {
+      // Only include conversion questions (static bank)
+      if (e.key.indexOf('conv_') === 0) {
+        var idx = parseInt(e.key.replace('conv_', ''));
+        var q = CONV_QS[idx];
+        if (!q) return;
+        allErrors.push({
+          subject: 'calcul', subjectIcon: '🔢', key: e.key, rate: e.rate, q: q,
+          instruction: 'Conversion :',
+          phrase: q.question,
+          answer: String(q.reponse),
+          choices: [],
+          check: function(input) { return checkCalcAnswer(q.reponse, input); }
+        });
+      }
+      // For mental/operations, regenerate a similar question
+      if (e.key.indexOf('mental_') === 0 || e.key.indexOf('op_') === 0) {
+        var calcType = e.key.indexOf('mental_') === 0 ? 'mental' : 'operation';
+        var genQ = generateCalcQ(calcType);
+        allErrors.push({
+          subject: 'calcul', subjectIcon: '🔢', key: e.key, rate: e.rate, q: genQ,
+          instruction: CALC_TYPES[calcType].nom + ' :',
+          phrase: genQ.question,
+          answer: formatNum(genQ.reponse),
+          choices: [],
+          check: function(input) { return checkCalcAnswer(genQ.reponse, input); }
+        });
+      }
+    });
+  }
+
+  gatherErrors();
+
+  // ===== DISPLAY ERRORS SUMMARY =====
+  var summaryEl = document.getElementById('errors-summary');
+  if (allErrors.length < 5) {
+    document.getElementById('no-errors-msg').style.display = '';
+    document.getElementById('start-section').style.display = 'none';
+  } else {
+    var subjects = {};
+    allErrors.forEach(function(e) {
+      if (!subjects[e.subject]) subjects[e.subject] = { icon: e.subjectIcon, count: 0 };
+      subjects[e.subject].count++;
+    });
+    var html = '<div class="stats-grid">';
+    Object.keys(subjects).forEach(function(s) {
+      html += '<div class="stat-card"><div class="stat-val">' + subjects[s].icon + ' ' + subjects[s].count + '</div><div class="stat-label">' + s + '</div></div>';
+    });
+    html += '</div><p style="text-align:center;color:#888;font-size:0.85em;margin-top:8px">' + allErrors.length + ' erreurs au total</p>';
+    summaryEl.innerHTML = html;
+  }
+
+  // ===== PHASE 1: REVISION =====
+  var revisionTimer = null;
+  var revisionTimeLeft = 300; // 5 minutes
+
+  function startRevision() {
+    showScreen('screen-revision');
+
+    // Display all errors grouped by subject for revision
+    var listEl = document.getElementById('revision-list');
+    var grouped = {};
+    allErrors.forEach(function(e) {
+      if (!grouped[e.subject]) grouped[e.subject] = { icon: e.subjectIcon, items: [] };
+      grouped[e.subject].items.push(e);
+    });
+
+    var html = '';
+    Object.keys(grouped).forEach(function(s) {
+      var g = grouped[s];
+      html += '<h3>' + g.icon + ' ' + s.charAt(0).toUpperCase() + s.slice(1) + '</h3>';
+      g.items.forEach(function(e) {
+        html += '<div class="error-item" style="margin-bottom:8px">' +
+          '<div style="font-size:0.85em;color:#888">' + e.instruction + '</div>' +
+          '<div>' + e.phrase + '</div>' +
+          '<div style="color:#27ae60;font-weight:700">→ ' + e.answer + '</div>' +
+          '</div>';
+      });
+    });
+    listEl.innerHTML = html;
+
+    // Start countdown
+    revisionTimeLeft = 300;
+    updateRevisionTimer();
+    revisionTimer = setInterval(function() {
+      revisionTimeLeft--;
+      updateRevisionTimer();
+      if (revisionTimeLeft <= 0) {
+        clearInterval(revisionTimer);
+        startTest();
+      }
+    }, 1000);
+  }
+
+  function updateRevisionTimer() {
+    var m = Math.floor(revisionTimeLeft / 60);
+    var s = revisionTimeLeft % 60;
+    document.getElementById('revision-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    var pct = (revisionTimeLeft / 300) * 100;
+    document.getElementById('timerBar').style.width = pct + '%';
+  }
+
+  // ===== PHASE 2: TEST =====
+  var testSession = {
+    questions: [],
+    index: 0,
+    correct: 0,
+    wrong: 0,
+    answered: false,
+    errors: [],
+    successKeys: [] // keys of correctly answered questions
+  };
+
+  function startTest() {
+    if (revisionTimer) clearInterval(revisionTimer);
+    showScreen('screen-test');
+
+    // Pick 20 questions from errors, shuffled, no duplicates
+    var pool = shuffle(allErrors.slice());
+    testSession.questions = pool.slice(0, 20);
+    testSession.index = 0;
+    testSession.correct = 0;
+    testSession.wrong = 0;
+    testSession.errors = [];
+    testSession.successKeys = [];
+
+    showTestQuestion();
+  }
+
+  function showTestQuestion() {
+    var q = testSession.questions[testSession.index];
+    testSession.answered = false;
+
+    document.getElementById('test-progress').textContent = 'Question ' + (testSession.index + 1) + ' / ' + testSession.questions.length;
+    document.getElementById('q-subject').textContent = q.subjectIcon + ' ' + q.subject.charAt(0).toUpperCase() + q.subject.slice(1);
+    document.getElementById('q-instruction').textContent = q.instruction;
+    document.getElementById('q-phrase').textContent = q.phrase;
+
+    // Reset UI
+    document.getElementById('feedback').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('submit-btn').style.display = '';
+
+    // Choices or text input
+    if (q.choices && q.choices.length > 0) {
+      document.getElementById('choices-container').style.display = '';
+      document.getElementById('text-container').style.display = 'none';
+      var grid = document.getElementById('choices-grid');
+      grid.innerHTML = '';
+      q.choices.forEach(function(c) {
+        var btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c;
+        btn.onclick = function() { selectTestChoice(btn, c); };
+        grid.appendChild(btn);
+      });
+    } else {
+      document.getElementById('choices-container').style.display = 'none';
+      document.getElementById('text-container').style.display = '';
+      var inp = document.getElementById('answer-input');
+      inp.value = '';
+      inp.className = 'answer-input';
+      inp.disabled = false;
+      inp.focus();
+    }
+  }
+
+  function selectTestChoice(btn, value) {
+    if (testSession.answered) return;
+    testSession.answered = true;
+
+    var q = testSession.questions[testSession.index];
+    var correct = q.check(value);
+    processTestAnswer(correct, value, q);
+
+    // Highlight buttons
+    document.querySelectorAll('#choices-grid .choice-btn').forEach(function(b) {
+      b.disabled = true;
+      if (b.textContent === q.answer) b.classList.add('correct');
+      if (b === btn && !correct) b.classList.add('incorrect');
+    });
+  }
+
+  function checkTestAnswer() {
+    if (testSession.answered) return;
+    testSession.answered = true;
+
+    var inp = document.getElementById('answer-input');
+    var q = testSession.questions[testSession.index];
+    var correct = q.check(inp.value);
+    processTestAnswer(correct, inp.value, q);
+
+    inp.disabled = true;
+    inp.className = 'answer-input ' + (correct ? 'correct' : 'incorrect');
+    document.getElementById('submit-btn').style.display = 'none';
+  }
+
+  function processTestAnswer(correct, userAnswer, q) {
+    var fb = document.getElementById('feedback');
+    fb.style.display = 'block';
+
+    if (correct) {
+      testSession.correct++;
+      testSession.successKeys.push({ subject: q.subject, key: q.key });
+      fb.className = 'feedback correct';
+      document.getElementById('feedback-title').textContent = '✅ Correct !';
+      document.getElementById('feedback-answer').textContent = '';
+    } else {
+      testSession.wrong++;
+      testSession.errors.push({ subject: q.subject, instruction: q.instruction, phrase: q.phrase, user: userAnswer, expected: q.answer });
+      fb.className = 'feedback incorrect';
+      document.getElementById('feedback-title').textContent = '❌ Incorrect';
+      document.getElementById('feedback-answer').innerHTML = 'La bonne réponse : <strong>' + q.answer + '</strong>';
+    }
+
+    document.getElementById('sess-correct').textContent = testSession.correct;
+    document.getElementById('sess-wrong').textContent = testSession.wrong;
+    document.getElementById('next-btn').style.display = '';
+  }
+
+  function nextTestQuestion() {
+    testSession.index++;
+    if (testSession.index >= testSession.questions.length) {
+      endTest();
+    } else {
+      showTestQuestion();
+    }
+  }
+
+  // ===== END TEST =====
+  function endTest() {
+    showScreen('screen-result');
+
+    var won = testSession.wrong <= 1;
+
+    if (won) {
+      document.getElementById('result-win').style.display = '';
+      document.getElementById('result-lose').style.display = 'none';
+
+      // Grant cat friend
+      var cat = loadCat();
+      grantCatFriend(cat);
+
+      // Show preview
+      document.getElementById('friend-preview').innerHTML =
+        '<div style="width:100px">' + getCatSVG() + '</div>' +
+        '<div style="font-size:2em;animation:pulse 1s infinite">💕</div>' +
+        '<div style="width:70px">' + getFriendSVG() + '</div>';
+
+      // Clear successful errors from stats
+      testSession.successKeys.forEach(function(sk) {
+        var data = loadSave(sk.subject);
+        if (data.stats[sk.key]) {
+          data.stats[sk.key].wrong = 0;
+          saveGame(sk.subject, data);
+        }
+      });
+    } else {
+      document.getElementById('result-win').style.display = 'none';
+      document.getElementById('result-lose').style.display = '';
+    }
+
+    // Stats
+    document.getElementById('result-stats').innerHTML =
+      '<div class="result-stat"><div class="val">' + testSession.questions.length + '</div><div class="lbl">Questions</div></div>' +
+      '<div class="result-stat"><div class="val">' + testSession.correct + '</div><div class="lbl">Bonnes</div></div>' +
+      '<div class="result-stat"><div class="val">' + testSession.wrong + '</div><div class="lbl">Erreurs</div></div>';
+
+    // Show errors
+    if (testSession.errors.length > 0) {
+      document.getElementById('result-errors').style.display = '';
+      var html = '';
+      testSession.errors.forEach(function(e) {
+        html += '<div class="error-item">' +
+          '<strong>' + e.subject + '</strong> — ' + e.phrase +
+          '<br><span class="wrong-ans">' + (e.user || '(vide)') + '</span> → <span class="right-ans">' + e.expected + '</span>' +
+          '</div>';
+      });
+      document.getElementById('result-errors-list').innerHTML = html;
+    }
+
+    syncToCloud().catch(function() {});
+  }
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function() {});
+</script>
+</body>
+</html>

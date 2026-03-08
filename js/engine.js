@@ -159,7 +159,7 @@ const CAT_ACTIONS = [
 
 const CAT_STAT_ICONS = { hunger: '🍣', happiness: '💕', cleanliness: '🛁', energy: '⚡' };
 const CAT_STAT_NAMES = { hunger: 'Faim', happiness: 'Bonheur', cleanliness: 'Propreté', energy: 'Énergie' };
-const CAT_DECAY_PER_HOUR = 80;
+const CAT_DECAY_PER_HOUR = 3.3;
 
 function loadCat(profileId) {
   const id = profileId || (currentProfile && currentProfile.id);
@@ -232,6 +232,32 @@ function doCatAction(cat, actionId) {
 function earnCoins(cat, amount) {
   cat.coins = (cat.coins || 0) + amount;
   saveCat(cat);
+}
+
+function grantCatFriend(cat) {
+  cat.friendUntil = Date.now() + 3 * 24 * 3600000; // 3 jours
+  saveCat(cat);
+}
+
+function hasCatFriend(cat) {
+  return cat.friendUntil && Date.now() < cat.friendUntil;
+}
+
+function getFriendSVG() {
+  return '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">' +
+  '<ellipse cx="60" cy="85" rx="30" ry="20" fill="#C8B0FF"/>' +
+  '<circle cx="60" cy="50" r="28" fill="#C8B0FF"/>' +
+  '<polygon points="38,30 30,5 50,22" fill="#C8B0FF"/>' +
+  '<polygon points="40,27 34,12 48,22" fill="#E8D0FF"/>' +
+  '<polygon points="82,30 90,5 70,22" fill="#C8B0FF"/>' +
+  '<polygon points="80,27 86,12 72,22" fill="#E8D0FF"/>' +
+  '<ellipse cx="48" cy="47" rx="5" ry="6" fill="#3E3E3E"/>' +
+  '<ellipse cx="72" cy="47" rx="5" ry="6" fill="#3E3E3E"/>' +
+  '<circle cx="50" cy="44" r="2" fill="white"/>' +
+  '<circle cx="74" cy="44" r="2" fill="white"/>' +
+  '<path d="M57,58 L60,62 L63,58 Z" fill="#FF9EB5"/>' +
+  '<path d="M52,66 Q60,73 68,66" stroke="#3E3E3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+  '</svg>';
 }
 
 function getCatSVG() {

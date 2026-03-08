@@ -72,6 +72,8 @@
     </div>
 
     <hr class="sep">
+    <a href="revision-test.html" class="btn btn-eval" id="btn-revision-test" style="display:none;text-decoration:none;text-align:center">🏆 Test multi-matieres — Gagne un ami pour ton chat !</a>
+    <hr class="sep">
     <div id="sync-status" style="text-align:center;font-size:0.82em;margin:8px 0;min-height:20px"></div>
     <button class="btn btn-secondary" onclick="switchProfile()">🔄 Changer de profil</button>
     <button class="btn btn-secondary" onclick="showScreen('screen-settings')">⚙️ Synchronisation cloud</button>
@@ -159,6 +161,16 @@
     let cat = loadCat(id);
     renderCat(cat);
 
+    // Show revision test button if errors exist
+    var totalErrors = 0;
+    ALL_SUBJECTS.forEach(function(s) {
+      try {
+        var d = JSON.parse(localStorage.getItem('champion_' + id + '_' + s));
+        if (d && d.stats) totalErrors += getErrorCombos(d.stats).length;
+      } catch(e) {}
+    });
+    document.getElementById('btn-revision-test').style.display = totalErrors >= 5 ? '' : 'none';
+
     updateSyncStatus(false);
     var ok = await loadFromCloud(id);
     updateSyncStatus(ok);
@@ -172,7 +184,14 @@
   function renderCat(cat) {
     const scene = document.getElementById('cat-scene');
     scene.setAttribute('data-mood', getCatMood(cat));
-    scene.innerHTML = getCatSVG();
+    var catHtml = getCatSVG();
+    if (hasCatFriend(cat)) {
+      catHtml = '<div style="display:flex;align-items:center;justify-content:center;gap:6px">' +
+        '<div style="flex:1;max-width:140px">' + getCatSVG() + '</div>' +
+        '<div style="font-size:1.8em;animation:pulse 1s infinite">💕</div>' +
+        '<div style="flex:1;max-width:100px">' + getFriendSVG() + '</div></div>';
+    }
+    scene.innerHTML = catHtml;
 
     document.getElementById('cat-speech').textContent = getCatMessage(cat);
     document.getElementById('cat-coins').textContent = cat.coins || 0;

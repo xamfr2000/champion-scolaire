@@ -281,7 +281,7 @@ function checkAnswer() {
   const expectedStr = formatNum(q.reponse);
   if (correct) {
     session.correct++; session.streak++;
-    let coins = session.streak >= 5 ? 5 : session.streak >= 3 ? 3 : 2;
+    let coins = session.streak >= 5 ? 10 : session.streak >= 3 ? 6 : 4;
     session.coinsEarned += coins; session.score += coins;
     inp.className = 'answer-input correct'; fb.className = 'feedback correct'; fb.style.display = 'block';
     document.getElementById('feedback-title').textContent =

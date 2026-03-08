@@ -1,4 +1,4 @@
-const CACHE_NAME = 'champion-v13';
+const CACHE_NAME = 'champion-v15';
 const URLS = [
   './',
   'index.html',
@@ -6,6 +6,7 @@ const URLS = [
   'grammaire.html',
   'calcul.html',
   'orthographe.html',
+  'revision-test.html',
   'css/style.css',
   'js/engine.js',
   'js/conjugaison.js',
